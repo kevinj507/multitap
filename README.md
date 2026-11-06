@@ -219,8 +219,9 @@ can add `viewer`/`editor` members by email, and every graph also carries an
 anonymously attributed) for anyone holding just the URL. Legacy graphs
 (`owner_user_id IS NULL`) always behave as URL-bearer, so flipping a no-auth
 deployment to Clerk doesn't retroactively lock them down. Agents authenticate
-with a `gt_*` bearer token (minted from the in-app key-icon panel), which the
-server tells apart from Clerk session JWTs (`eyJ…`) by prefix-checking the
+with a `gt_*` bearer token (generated in the app: your name at the bottom
+of the sidebar → Agents), which the server tells apart from Clerk session
+JWTs (`eyJ…`) by prefix-checking the
 `Authorization` header. The full model — sharing flows, pending-member
 auto-claim, client-side storage, live access-change propagation, and what's out
 of scope — lives in [Sharing & access model —
@@ -333,10 +334,11 @@ work is saved to you. The skill is set up to notice when no token is
 present, tell you this tradeoff, and let you choose — provide a token, or
 go ahead anonymously.
 
-1. **Mint.** Sign in to the app, click the key icon in the sidebar,
-   click Generate. The modal shows the `gt_…` string **exactly once** —
-   copy it immediately. After that, only the hash is stored server-side;
-   if you lose the plaintext, delete the token and mint a new one.
+1. **Mint.** Sign in to the app, click your name at the bottom of the
+   sidebar, choose **Agents**, then click Generate. The panel shows the
+   `gt_…` string **exactly once** — copy it immediately. After that, only
+   the hash is stored server-side; if you lose the plaintext, delete the
+   token and mint a new one.
 2. **Export it somewhere Claude Code will see it.** Pick whichever fits:
    - **Shell rc** (`~/.zshrc`, `~/.bashrc`): `export MULTITAP_AGENT_TOKEN=gt_...`
      — every future shell, every future Claude Code session.

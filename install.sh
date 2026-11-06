@@ -22,6 +22,7 @@
 #   CLAUDE_HOME=<path>            default: ~/.claude
 #   MULTITAP_SKILL_URL=<url>     default: GitHub raw URL for SKILL.md
 #   MULTITAP_WORKFLOW_URL=<url>  default: GitHub raw URL for research.workflow.js
+#   MULTITAP_REPORT_WORKFLOW_URL=<url>  default: report.workflow.js next to it
 
 set -euo pipefail
 
@@ -30,6 +31,8 @@ LOCAL_SKILL="$SCRIPT_DIR/.claude/skills/multitap/SKILL.md"
 REMOTE_SKILL="${MULTITAP_SKILL_URL:-${GRAPHTASK_SKILL_URL:-https://raw.githubusercontent.com/kevinj507/multitap/main/.claude/skills/multitap/SKILL.md}}"
 LOCAL_WORKFLOWS_DIR="$SCRIPT_DIR/.claude/skills/multitap/workflows"
 REMOTE_WORKFLOW="${MULTITAP_WORKFLOW_URL:-${GRAPHTASK_WORKFLOW_URL:-https://raw.githubusercontent.com/kevinj507/multitap/main/.claude/skills/multitap/workflows/research.workflow.js}}"
+# SKILL.md references both bundled workflows; the second one sits next to the first.
+REMOTE_REPORT_WORKFLOW="${MULTITAP_REPORT_WORKFLOW_URL:-${REMOTE_WORKFLOW%/*}/report.workflow.js}"
 
 CLAUDE_HOME="${CLAUDE_HOME:-$HOME/.claude}"
 SKILL_DIR="$CLAUDE_HOME/skills/multitap"
@@ -64,8 +67,9 @@ else
 fi
 
 # --- 1b. install bundled workflows ---
-# SKILL.md references .claude/skills/multitap/workflows/research.workflow.js;
-# ship it alongside the skill. Same local-then-remote fallback as above.
+# SKILL.md references .claude/skills/multitap/workflows/research.workflow.js
+# and report.workflow.js; ship both alongside the skill. Same local-then-remote
+# fallback as above.
 mkdir -p "$WORKFLOWS_DIR"
 if [ -d "$LOCAL_WORKFLOWS_DIR" ]; then
   cp "$LOCAL_WORKFLOWS_DIR"/*.js "$WORKFLOWS_DIR"/ 2>/dev/null \
@@ -73,10 +77,12 @@ if [ -d "$LOCAL_WORKFLOWS_DIR" ]; then
     || echo "… no workflow files found in $LOCAL_WORKFLOWS_DIR"
 elif command -v curl >/dev/null 2>&1; then
   curl -fsSL "$REMOTE_WORKFLOW" -o "$WORKFLOWS_DIR/research.workflow.js"
-  echo "✓ workflow downloaded from $REMOTE_WORKFLOW"
+  curl -fsSL "$REMOTE_REPORT_WORKFLOW" -o "$WORKFLOWS_DIR/report.workflow.js"
+  echo "✓ workflows downloaded from ${REMOTE_WORKFLOW%/*}/"
 elif command -v wget >/dev/null 2>&1; then
   wget -q "$REMOTE_WORKFLOW" -O "$WORKFLOWS_DIR/research.workflow.js"
-  echo "✓ workflow downloaded from $REMOTE_WORKFLOW"
+  wget -q "$REMOTE_REPORT_WORKFLOW" -O "$WORKFLOWS_DIR/report.workflow.js"
+  echo "✓ workflows downloaded from ${REMOTE_WORKFLOW%/*}/"
 else
   echo "… skipped workflows: no local dir and neither curl nor wget available" >&2
 fi
@@ -128,8 +134,9 @@ Next steps:
      (shell rc / settings.json env block), or future sessions fall back to
      http://127.0.0.1:3000:
        export MULTITAP_BASE_URL=https://your-multitap.example.com
-  3. (If the instance has AUTH_PROVIDER=clerk) Sign in, open
-     Settings → Agent tokens, mint a token, then export it:
+  3. (If the instance has AUTH_PROVIDER=clerk) Sign in, click your name
+     at the bottom of the sidebar, choose Agents, click Generate, then
+     export the token:
        export MULTITAP_AGENT_TOKEN=gt_...
      The skill auto-sends it as a Bearer header so writes attribute to
      your account. No-auth deployments can skip this.

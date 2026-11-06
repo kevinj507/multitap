@@ -107,9 +107,9 @@ Legacy graphs (`owner_user_id IS NULL`, created before Phase B or on a no-auth i
 
 Because of that, **never go anonymous silently.** But first — **look for the token before declaring it missing.** It's commonly sitting in a repo-local secrets file (`.env`, `.wafer/session.env`, …) that this bash session never sourced, so an empty `$MULTITAP_AGENT_TOKEN` does NOT mean "no token." The identity block below scans those files and exports it; only if it's genuinely absent from BOTH the environment and those files, on an auth-enabled instance, before your first write tell the user, plainly: *you can keep working anonymously, but a token saves your work to your account (and shows it in your sidebar) — here's how to mint one.* Then let them choose — wait for a token if they want one, or proceed anonymously if they'd rather just get going. Anonymous is a fully supported path; the only rule is that it's the user's **informed** choice, not a default you slid into. (On a no-auth instance there's no token concept — anonymous is the only mode, so no nudge is needed.)
 
-> **The server enforces this, so a silent orphan is now impossible.** On an accounts-enabled instance, an *unauthenticated* `POST /api/graphs` is **refused with `401`** ("refusing to create a graph with no owner") unless the body carries `allow_anonymous: true`. A bare token-less create no longer returns a misleading `201` — it fails loudly and tells you to send the token or opt in explicitly. If the user has genuinely chosen anonymous, send `{"name": ..., "allow_anonymous": true}`. With a token set (identity block below) you never hit this — your graphs land owned.
+> **The server enforces this, so a silent orphan is now impossible.** On an accounts-enabled instance, an *unauthenticated* `POST /api/graphs` is **refused with `401`** ("refusing to create a graph with no owner") unless the body carries `allow_anonymous: true`. A bare token-less create no longer returns a misleading `201` — it fails loudly and tells you to send the token or opt in explicitly. If the user has genuinely chosen anonymous, send `{"name": ..., "allow_anonymous": true}` — the §1 recipe does exactly that when you run it with `MULTITAP_ALLOW_ANONYMOUS=1`, and creates nothing without it. With a token set (identity block below) you never hit this — your graphs land owned.
 
-To attribute writes, the user generates a token from the in-app key-icon panel (Settings → Agent tokens) and provides it as `MULTITAP_AGENT_TOKEN` — either an exported env var OR a `MULTITAP_AGENT_TOKEN=` line in a repo-local secrets file (`.env`, `.wafer/session.env`, …); the identity block below resolves it from either automatically, so a fresh shell that never sourced the file still finds it. Agent tokens always start with the prefix `gt_`; Clerk session JWTs start with `eyJ` (server uses the prefix to route).
+To attribute writes, the user generates a token in the app (signed in: click their name at the bottom of the sidebar → **Agents** → Generate) and provides it as `MULTITAP_AGENT_TOKEN` — either an exported env var OR a `MULTITAP_AGENT_TOKEN=` line in a repo-local secrets file (`.env`, `.wafer/session.env`, …); the identity block below resolves it from either automatically, so a fresh shell that never sourced the file still finds it. Agent tokens always start with the prefix `gt_`; Clerk session JWTs start with `eyJ` (server uses the prefix to route).
 
 ### Why am I getting 401 / 403?
 
@@ -117,7 +117,8 @@ When the user reports an auth error from the canvas or asks you to debug one, wo
 
 | Symptom | Likely cause | What to do |
 |---|---|---|
-| 401 on any `/api/*` write | Sent an `Authorization: Bearer gt_…` whose token doesn't resolve (truncated or revoked). A non-`gt_` bearer or an invalid Clerk JWT does NOT 401 — it silently degrades to anonymous. | Drop the header (anon) or re-export a real `gt_…` token. The server's strict 401 path only triggers for malformed `gt_` lookups, so this usually means a token got truncated or revoked. |
+| 401 on `POST /api/graphs` saying "refusing to create a graph with no owner" | No token was sent on an accounts-enabled instance, and the body did not opt in to an owner-less graph. | Send the user's `gt_…` token. Only if the user has chosen to work without an account, add `"allow_anonymous": true` to the body — the §1 recipe does this when run with `MULTITAP_ALLOW_ANONYMOUS=1`. If a `.multitap/graph-id` containing `null` was left behind, delete it. |
+| 401 on any other `/api/*` write | Sent an `Authorization: Bearer gt_…` whose token doesn't resolve (truncated or revoked). A non-`gt_` bearer or an invalid Clerk JWT does NOT 401 — it silently degrades to anonymous. | Drop the header (anon) or re-export a real `gt_…` token. The server's strict 401 path only triggers for malformed `gt_` lookups, so this usually means a token got truncated or revoked. |
 | 401 on `/api/me/*` (e.g. `/api/me/agent_tokens`) | Caller is anonymous (no signed-in user / no valid token). An agent token CAN GET its own `/agent_tokens` (200) but gets 403, not 401, on POST/DELETE there — it may read but not mint/revoke. | Direct the user to the in-app modal. |
 | 403 on `GET /api/graphs/:id` or `/graph` | Owned graph with `anon_role=none` and you aren't a member | Owner must either flip `anon_role` to `viewer`/`editor` or add the user (or your token's owner) as a member. |
 | 403 on `POST/PATCH/DELETE` but `GET` works | `anon_role=viewer` lets you read; task/edge/batch/upload/report writes need editor+ (graph-row `PATCH` 403s even for editors — next row) | Owner flips `anon_role=editor` or grants the writer member-editor explicitly. |
@@ -164,7 +165,11 @@ if [ ! -f .multitap/agent-session.json ]; then
     ADJECTIVES=(Quiet Bright Swift Clever Bold Gentle Brave Wise Calm Eager Sharp Nimble Steady Hopeful Witty Vivid Daring Curious Lively Mellow Kind Keen)
     OWNER="${ADJECTIVES[$((RANDOM % ${#ADJECTIVES[@]}))]} ${ANIMALS[$((RANDOM % ${#ANIMALS[@]}))]}"
   fi
-  AGENT_ID="$(cat /proc/sys/kernel/random/uuid)"
+  # A uuid for this session. /proc is Linux-only, so fall back to uuidgen
+  # (macOS, BSD) and then to random bytes — the id must never be empty, or
+  # presence and selection calls are rejected.
+  AGENT_ID="$(cat /proc/sys/kernel/random/uuid 2>/dev/null || uuidgen 2>/dev/null | tr '[:upper:]' '[:lower:]')"
+  [ -n "$AGENT_ID" ] || AGENT_ID="$(od -An -N16 -tx1 /dev/urandom | tr -d ' \n' | sed -E 's/(.{8})(.{4})(.{4})(.{4})(.{12})/\1-\2-\3-\4-\5/')"
   # The "'s <AgentLabel>" suffix names the harness (Claude here); the server
   # parses it so a different harness's skill can send e.g. "…'s Codex".
   echo "{\"id\":\"$AGENT_ID\",\"name\":\"${OWNER}'s Claude\"}" > .multitap/agent-session.json
@@ -180,7 +185,8 @@ WRITE_HEADERS=(
 )
 
 # Authed deployments (AUTH_PROVIDER=clerk): the user generates an agent token
-# in the in-app Settings → Agent tokens panel and provides it as
+# in the app (signed in: their name at the bottom of the sidebar → Agents →
+# Generate) and provides it as
 # MULTITAP_AGENT_TOKEN. **Recommended on auth-enabled instances** so your work
 # is saved to the user's account — without it the §1 check tells the user the
 # tradeoff and lets them choose (anonymous still works; it just creates orphan
@@ -313,7 +319,10 @@ done
 # only by URL. Anonymous is allowed; the rule is just DON'T slide into it
 # silently. If there's no token, surface the message below to the user and
 # RECOMMEND minting one, then let them decide (provide a token, or say "go ahead
-# anonymously"). Do NOT exit — anonymous is a supported path, not an error.
+# anonymously"). Anonymous is a supported path, not an error — but it needs the
+# user's choice, so without a token this block creates NOTHING until you re-run
+# it with MULTITAP_ALLOW_ANONYMOUS=1 (set that only after the user has chosen
+# to work without a token, or cannot be reached to answer).
 # Resolve the token from a repo-local secrets file before deciding it's absent —
 # the SAME scan as the identity block, repeated here because shell state doesn't
 # survive between bash calls. This is what stops a false "no token" nudge (and
@@ -329,35 +338,66 @@ if [ -z "$MULTITAP_AGENT_TOKEN" ]; then
   done
 fi
 AUTH_ENABLED=$(echo "$CONFIG" | jq -r .auth_enabled)
-if [ "$AUTH_ENABLED" = "true" ] && [ -z "$MULTITAP_AGENT_TOKEN" ]; then
+ANON_UNDECIDED=""
+if [ "$AUTH_ENABLED" = "true" ] && [ -z "$MULTITAP_AGENT_TOKEN" ] && [ "${MULTITAP_ALLOW_ANONYMOUS:-}" != "1" ]; then
+  ANON_UNDECIDED=1
   cat >&2 <<EOF
 No MULTITAP_AGENT_TOKEN found — checked the environment AND the repo's local
 secrets files (.env, .wafer/session.env, …). I can work anonymously, but
 anything I create won't be saved to your account (it won't show in your "My
 graphs" sidebar and is reachable only by its URL). To save your work, mint a
 token — or, if you already have one in a secrets file, tell me where:
-  • open $GT_BASE → sign in → Settings (Cmd/Ctrl+K) → Agent tokens → generate
+  • open $GT_BASE → sign in → click your name at the bottom of the sidebar
+    → Agents → Generate
   • add MULTITAP_AGENT_TOKEN=gt_... to .env / .wafer/session.env (I read those)
   • or: export MULTITAP_AGENT_TOKEN=gt_...        # this shell only
 Then I'll pick it up automatically. Or tell me to go ahead anonymously.
 EOF
-  # Relay the above to the user in your own words and recommend a token. Then
-  # continue per their choice — anonymous writes below are fine once they've
-  # knowingly opted in (or if they're not reachable to answer).
+  # Relay the above to the user in your own words and recommend a token.
+  # If this project has no graph yet, STOP here: nothing has been created and
+  # the block ends with exit status 3. Per their choice, re-run this block —
+  #   token provided  → as is (the scan above finds it);
+  #   anonymous       → with MULTITAP_ALLOW_ANONYMOUS=1 set on the call.
+  # Only if they're not reachable to answer may you opt in on their behalf.
+  # If the project already has a graph (.multitap/graph-id), the block carries
+  # on with it.
 fi
 
 [ -d .multitap ] || [ ! -d .graphtask ] || cp -R .graphtask .multitap   # a folder from before the rename carries over
 mkdir -p .multitap
-if [ ! -f .multitap/graph-id ]; then
-  GT_GID=$(curl -sS -X POST "$GT_BASE/api/graphs" \
+# A graph-id file holding "null" or nothing is what a FAILED create used to
+# leave behind (older copies of this recipe wrote it). Treat it as absent.
+case "$(cat .multitap/graph-id 2>/dev/null)" in ""|null) rm -f .multitap/graph-id ;; esac
+if [ ! -f .multitap/graph-id ] && [ -z "$ANON_UNDECIDED" ]; then
+  # The create uses WRITE_HEADERS from the identity block. Shell state does not
+  # survive between Bash calls, so on a first run put the identity block and
+  # this block in ONE call.
+  [ "${#WRITE_HEADERS[@]}" -gt 0 ] || { echo "WRITE_HEADERS is not set — run the identity block in this same call first." >&2; exit 1; }
+  CREATE_BODY='{"name":"Project plan"}'
+  if [ "$AUTH_ENABLED" = "true" ] && [ -z "$MULTITAP_AGENT_TOKEN" ]; then
+    # Only reachable with MULTITAP_ALLOW_ANONYMOUS=1: the user's explicit choice.
+    CREATE_BODY='{"name":"Project plan","allow_anonymous":true}'
+  fi
+  CREATE_RESP=$(curl -sS -X POST "$GT_BASE/api/graphs" \
     "${WRITE_HEADERS[@]}" \
-    -d '{"name":"Project plan"}' \
-    | jq -r .id)
+    -d "$CREATE_BODY")
+  GT_GID=$(echo "$CREATE_RESP" | jq -r '.id // empty' 2>/dev/null)
+  if [ -z "$GT_GID" ]; then
+    # Never record a failed create: a bogus id here makes every later run skip
+    # creation and call /api/graphs/null. Show what the server said and stop.
+    echo "Graph NOT created — the server answered: $CREATE_RESP" >&2
+    exit 1
+  fi
   echo "$GT_GID" > .multitap/graph-id
   grep -qxF '.multitap/' .gitignore 2>/dev/null || echo '.multitap/' >> .gitignore
   # Show the user the URL to open. /g/:gid is the same route for every view
   # (graph, kanban, …) — view is a per-user localStorage flag, not in the URL.
   echo "Graph created: $GT_BASE/g/$GT_GID"
+fi
+if [ ! -f .multitap/graph-id ]; then
+  # Only reachable when the user has not chosen yet (no token, no opt-in).
+  echo "No graph yet — waiting for the user's choice: a token, or anonymous." >&2
+  exit 3
 fi
 GT_GID="$(cat .multitap/graph-id)"
 grep -qxF "$GT_GID" .multitap/agent-session-graphs 2>/dev/null || echo "$GT_GID" >> .multitap/agent-session-graphs
@@ -1414,7 +1454,7 @@ All paths below are `:gid`-scoped (substitute `$GT_GID`). Base URL is `$GT_BASE`
 |---|---|---|
 | GET | `/api/config` | `{auth_enabled, provider, publishable_key, viewer_user_id}` — probe first to learn the deployment mode (`publishable_key` = Clerk publishable key for the frontend, `null` when auth is off) |
 | GET | `/api/graphs` | Lists graphs the viewer owns + is a member of; anonymous callers (which includes every caller in auth-off mode) get `[]` — legacy un-owned graphs stay reachable by URL only |
-| POST | `/api/graphs` | `{name, description?}` — `name` ≤80, `description` ≤500; duplicate names allowed; new graphs default `anon_role='viewer'` and `settings={}` |
+| POST | `/api/graphs` | `{name, description?, allow_anonymous?}` — `name` ≤80, `description` ≤500; duplicate names allowed; on an accounts-enabled instance a create with no token is refused (401) unless `allow_anonymous: true` (an owner-less, URL-only graph); new graphs default `anon_role='viewer'` and `settings={}` |
 | GET | `/api/graphs/:id` | One graph; also returns `viewer_can_edit` / `viewer_can_manage` based on the caller's role |
 | PATCH | `/api/graphs/:id` | `{name?, description?, anon_role?, settings?}` — `name` ≤80, `description` ≤500; `anon_role` ∈ `none | viewer | editor`; see section 9 for `settings` |
 | DELETE | `/api/graphs/:id` | Cascades to tasks + edges |
@@ -1583,7 +1623,7 @@ If the user says something like "set up Multitap" / "install the skill" / "I fol
    Override `CLAUDE_HOME` if their config lives somewhere other than `~/.claude`. After the script runs, tell them to **restart Claude Code** so the new hooks load.
 2. **`jq`** — recipes parse JSON with it. Install via `brew install jq` (macOS), `apt install jq` (Debian/Ubuntu), or `apk add jq` (Alpine).
 3. **`MULTITAP_BASE_URL`** — point at the instance they're using. Hosted users: `export MULTITAP_BASE_URL=https://context.multitap.sh`. Self-hosted: `export MULTITAP_BASE_URL=https://multitap.example.com`. Local users: leave unset; the recipes default to `http://127.0.0.1:3000`. Persist it the same way as the token in step 4 (shell rc / session env) — if it only lives in one terminal, future agent sessions silently fall back to the localhost default and probe the wrong instance. The agent uses this for both API calls AND the URL it prints to the user — so it must be reachable from the user's browser, not just the agent.
-4. **`MULTITAP_AGENT_TOKEN`** (auth-enabled instances — **recommended** so the user's work is saved to their account) — tell them to open the in-app Agent tokens panel (key icon), click Generate, copy the `gt_…` string from the modal (shown exactly once), and persist it in whichever env mechanism their setup uses (`export` in `~/.zshrc`, a project `.env`, a wafer `session.env`, etc.). The skill's token resolver reads these repo-local secrets files directly (§ identity block), so the token is picked up even in a fresh shell that never sourced them — the user doesn't have to re-`export` it every session. Without a token anywhere the agent still works anonymously, but creates orphan graphs not tied to their account — so the section 1 check surfaces the tradeoff and lets them choose; it does not hard-block.
+4. **`MULTITAP_AGENT_TOKEN`** (auth-enabled instances — **recommended** so the user's work is saved to their account) — tell them to sign in, click their name at the bottom of the sidebar, choose **Agents**, click Generate, copy the `gt_…` string from the panel (shown exactly once), and persist it in whichever env mechanism their setup uses (`export` in `~/.zshrc`, a project `.env`, a wafer `session.env`, etc.). The skill's token resolver reads these repo-local secrets files directly (§ identity block), so the token is picked up even in a fresh shell that never sourced them — the user doesn't have to re-`export` it every session. Without a token anywhere the agent still works anonymously, but creates orphan graphs not tied to their account — so the section 1 check surfaces the tradeoff and lets them choose; it does not hard-block.
 
 If the user reports they can't reach Multitap at all (preflight fails even after §1's retries), don't try to start the server yourself — ask whether they're running it locally and which port, or whether they meant to point at the hosted URL. The most common false alarm is a supervised instance still booting when the session's first probe runs; the §1 retry loop absorbs that, so a failure that survives the retries is a real reachability or URL problem.
 
