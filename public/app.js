@@ -2883,6 +2883,7 @@ function addGraphEdge(edge) {
       source: String(edge.source_id),
       target: String(edge.target_id),
       edgeType: edge.type,
+      purpose: edge.purpose,
       color: meta.color || DEFAULT_EDGE_COLOR,
       curveDistance: getEdgeCurveData({ meta }).distance,
       curveWeight: getEdgeCurveData({ meta }).weight,
@@ -2988,6 +2989,7 @@ async function fetchGraph({ diff = false } = {}) {
         source: String(link.source),
         target: String(link.target),
         edgeType: link.type,
+        purpose: link.purpose,
         color: (link.meta && link.meta.color) || DEFAULT_EDGE_COLOR,
         curveDistance: getEdgeCurveData(link).distance,
         curveWeight: getEdgeCurveData(link).weight,
@@ -4332,7 +4334,12 @@ async function runCoordAction(action, btn) {
         claimNode.incomers('edge').forEach((e) => {
           const src = e.source();
           const m = src.data('meta') || {};
-          if (e.data('purpose') === 'required for' && m.coord && m.type === 'assumption' && m.coord.id) rests.push({ id: m.coord.id, title: m.title || m.coord.id });
+          // The engine's "rests on" edge is `required for` (a dependency). An
+          // edge loaded before `purpose` reached the canvas data has only its
+          // type, so a dependency edge counts too.
+          const p = e.data('purpose');
+          const restsOn = p === 'required for' || (p == null && e.data('edgeType') === 'dependency');
+          if (restsOn && m.coord && m.type === 'assumption' && m.coord.id) rests.push({ id: m.coord.id, title: m.title || m.coord.id });
         });
       }
       if (rests.length === 0) { showHint('This claim rests on no assumption to contradict; amend it or answer a decision instead'); return; }

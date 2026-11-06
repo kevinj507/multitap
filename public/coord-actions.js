@@ -41,7 +41,7 @@ export function actionsFor(coord) {
     // holder re-plans against them.
     if (st === 'open' || st === 'claimed' || st === 'stale') {
       out.push({ id: 'amend', label: 'Amend', method: 'POST', path: `/claims/${id}/amend`, ask: 'statement', hint: 'change what the claim says; the holder re-plans against it' });
-      out.push({ id: 'finding', label: 'Say it is wrong', method: 'POST', path: '/findings/owner', ask: 'finding', body: { effect: 'contradicts', where: [id] }, hint: 'a finding on your authority: an assumption this claim rests on fails here; the claim turns stale' });
+      out.push({ id: 'finding', label: 'Say it is wrong', method: 'POST', path: '/findings/owner', ask: 'finding', body: { effect: 'contradicts', where: [id] }, hint: 'a finding on your authority: an assumption this claim rests on fails here; a held claim turns stale for its holder to re-plan, an open one carries the finding for whoever takes it up' });
     }
   }
   if (kind === 'finding' && id) {
