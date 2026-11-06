@@ -4315,6 +4315,39 @@ function renderCoordActions(coord) {
 async function runCoordAction(action, btn) {
   const taskId = editingTaskId;
   const body = { ...(action.body || {}) };
+  if (action.ask === 'statement' || action.ask === 'finding') {
+    // The two owner moves need words. The record's canvas runs in a normal
+    // browser, where prompt() works; where it does not, the move is not made.
+    let text = null;
+    try { text = typeof window.prompt === 'function' ? window.prompt(action.ask === 'finding' ? 'What is wrong? (recorded as a finding on your authority)' : 'The claim should say:') : null; } catch { text = null; }
+    if (text === null || text.trim() === '') return;
+    body.statement = text.trim();
+    if (action.ask === 'finding') {
+      // The finding contradicts an assumption the claim rests on. From the
+      // graph in hand: the engine's `required for` edges into this claim from
+      // assumption nodes. One: use it. Several: ask which. None: cannot file.
+      const claimNode = cy && editingTaskId ? cy.getElementById(String(editingTaskId)) : null;
+      const rests = [];
+      if (claimNode && !claimNode.empty()) {
+        claimNode.incomers('edge').forEach((e) => {
+          const src = e.source();
+          const m = src.data('meta') || {};
+          if (e.data('purpose') === 'required for' && m.coord && m.type === 'assumption' && m.coord.id) rests.push({ id: m.coord.id, title: m.title || m.coord.id });
+        });
+      }
+      if (rests.length === 0) { showHint('This claim rests on no assumption to contradict; amend it or answer a decision instead'); return; }
+      let pick = rests[0].id;
+      if (rests.length > 1) {
+        const menu = rests.map((r, i) => `${i + 1}. ${r.title} (${r.id})`).join('\n');
+        let choice = null;
+        try { choice = window.prompt(`Which assumption fails here?\n${menu}\nNumber:`, '1'); } catch { choice = null; }
+        const n = Number(choice);
+        if (!Number.isInteger(n) || n < 1 || n > rests.length) return;
+        pick = rests[n - 1].id;
+      }
+      body.targets = [pick];
+    }
+  }
   if (action.ask === 'reason') {
     // The viewer shows no prompt dialogs in some hosts; a reason is optional
     // for the engine, so an unavailable prompt is simply no reason.

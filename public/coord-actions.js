@@ -33,6 +33,16 @@ export function actionsFor(coord) {
     if (st === 'claimed' || st === 'done' || st === 'landed') {
       out.push({ id: 'recheck', label: 'Run the checks again', method: 'POST', path: `/claims/${id}/recheck`, hint: 'the gate checks the claim\'s latest push once more' });
     }
+    // The owner's two direct moves (D12). "Say it is wrong" files a finding on
+    // the person's authority — verified at once — against an assumption the
+    // claim rests on, located in this claim; it needs that assumption's id,
+    // which the panel asks for when the claim rests on more than one.
+    // "Amend" changes the claim's words; a held claim turns stale and its
+    // holder re-plans against them.
+    if (st === 'open' || st === 'claimed' || st === 'stale') {
+      out.push({ id: 'amend', label: 'Amend', method: 'POST', path: `/claims/${id}/amend`, ask: 'statement', hint: 'change what the claim says; the holder re-plans against it' });
+      out.push({ id: 'finding', label: 'Say it is wrong', method: 'POST', path: '/findings/owner', ask: 'finding', body: { effect: 'contradicts', where: [id] }, hint: 'a finding on your authority: an assumption this claim rests on fails here; the claim turns stale' });
+    }
   }
   if (kind === 'finding' && id) {
     const st = coord.status;

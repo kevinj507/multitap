@@ -7,13 +7,16 @@ import { actionsFor, errorWords } from '../public/coord-actions.js';
 const ids = (coord) => actionsFor(coord).map((a) => a.id);
 
 describe('actionsFor', () => {
-  it('a finished claim can be landed or rechecked, sent back only when its landing failed; an open one offers nothing', () => {
+  it('a finished claim can be landed or rechecked, sent back only when its landing failed; an open or held one can be amended or called wrong', () => {
     expect(ids({ kind: 'claim', id: 'c1', status: 'done' })).toEqual(['land', 'recheck']);
     expect(ids({ kind: 'claim', id: 'c1', status: 'done', landing: { status: 'failed' } })).toEqual(['land', 'reopen', 'recheck']);
-    expect(ids({ kind: 'claim', id: 'c1', status: 'open' })).toEqual([]);
-    expect(ids({ kind: 'claim', id: 'c1', status: 'claimed' })).toEqual(['recheck']);
+    expect(ids({ kind: 'claim', id: 'c1', status: 'open' })).toEqual(['amend', 'finding']);
+    expect(ids({ kind: 'claim', id: 'c1', status: 'claimed' })).toEqual(['recheck', 'amend', 'finding']);
     expect(ids({ kind: 'claim', id: 'c1', status: 'landed' })).toEqual(['recheck']);
-    expect(ids({ kind: 'claim', id: 'c1', status: 'stale' })).toEqual([]);
+    expect(ids({ kind: 'claim', id: 'c1', status: 'stale' })).toEqual(['amend', 'finding']);
+    const finding = actionsFor({ kind: 'claim', id: 'c1', status: 'open' }).find((a) => a.id === 'finding');
+    expect(finding).toMatchObject({ path: '/findings/owner', ask: 'finding', body: { effect: 'contradicts', where: ['c1'] } });
+    expect(actionsFor({ kind: 'claim', id: 'c1', status: 'open' }).find((a) => a.id === 'amend')).toMatchObject({ path: '/claims/c1/amend', ask: 'statement' });
     const land = actionsFor({ kind: 'claim', id: 'c1', status: 'done' })[0];
     expect(land).toMatchObject({ method: 'POST', path: '/claims/c1/land' });
   });
