@@ -46,6 +46,13 @@
         <i class="ph ph-book reader-icon-closed" aria-hidden="true"></i>
         <i class="ph ph-book-open reader-icon-open" aria-hidden="true"></i>
       </button>
+      <!-- Coordination nodes toggle (one data model, S2a). The canvas hides the
+           coordination engine's nodes (claims, lines, its findings and
+           decisions — the ones carrying a meta.coord document) by default; this
+           shows them for the active graph. Preference per graph in localStorage. -->
+      <button id="sidebar-coord-btn" class="sb-icon-btn" title="Show coordination nodes" aria-label="Show coordination nodes" aria-pressed="false">
+        <i class="ph ph-git-branch" aria-hidden="true"></i>
+      </button>
       <button id="sidebar-collapse-btn" class="sb-icon-btn" title="Collapse sidebar" aria-label="Collapse sidebar">
         <i class="ph ph-arrow-line-left" aria-hidden="true"></i>
       </button>
@@ -227,6 +234,21 @@
           <option value="done">Done</option>
         </select>
       </label>
+      <!-- Coordination section (one data model, S2a): what the engine's
+           document under meta.coord says, in plain words. Shown only for a
+           coordination node; the rest of the form is read-only for it (the
+           owner rule — the statement and the fields change through the engine). -->
+      <section id="coord-section" class="coord-section hidden" aria-live="polite">
+        <div class="coord-section-header">
+          <span class="coord-section-title">Coordination engine</span>
+        </div>
+        <p class="coord-section-note" id="coord-note"></p>
+        <dl class="coord-rows" id="coord-rows"></dl>
+        <details class="coord-document">
+          <summary>The whole document</summary>
+          <pre id="coord-document"></pre>
+        </details>
+      </section>
       <div class="bg-image-row hidden" id="bg-image-row">
         <span class="bg-image-label">Background image</span>
         <div class="bg-image-field" id="bg-image-field" tabindex="0" role="button" aria-label="Set background image">
@@ -706,6 +728,8 @@
   <script type="module">
     import * as ReaderToc from '/reader-toc.js';
     window.ReaderToc = ReaderToc;
+    import * as CoordSummary from '/coord-summary.js';
+    window.CoordSummary = CoordSummary;
   </script>
   <!-- Reader citation parser (E16 footnotes): app.js reads window.ReaderCite to
        turn [[cite:<id>]] markers into numbered footnotes. -->

@@ -4682,3 +4682,25 @@ body.presence-hidden .presence-eye:hover {
   .push-button-collar::before { animation: none; }
   .push-button.is-tracking .push-button-collar::before { opacity: 0.30; }
 }
+
+
+/* ---- Coordination section in the panel (one data model, S2a) ---- */
+#coord-section.hidden { display: none; }
+.coord-section {
+  margin: var(--space-3, 12px) 0 var(--space-2, 8px);
+  padding: var(--space-3, 12px);
+  border: 1px dashed currentColor; opacity: 0.95;
+  border-radius: var(--radius-md, 8px);
+  font-size: var(--text-body-sm, 13px);
+}
+.coord-section-header { display: flex; align-items: center; gap: var(--space-2, 8px); margin-bottom: var(--space-2, 8px); }
+.coord-section-title { font-weight: 600; letter-spacing: 0.02em; }
+.coord-section-note { margin: 0 0 var(--space-2, 8px); opacity: 0.8; line-height: 1.4; }
+.coord-rows { display: grid; grid-template-columns: max-content 1fr; gap: 4px var(--space-3, 12px); margin: 0; }
+.coord-rows dt { opacity: 0.7; white-space: nowrap; }
+.coord-rows dd { margin: 0; overflow-wrap: anywhere; }
+.coord-document { margin-top: var(--space-2, 8px); }
+.coord-document summary { cursor: pointer; opacity: 0.8; }
+.coord-document pre { margin: var(--space-2, 8px) 0 0; max-height: 240px; overflow: auto; font-size: var(--text-meta, 11px); }
+body.panel-coord #task-form .body-section { opacity: 0.85; }
+#sidebar-coord-btn[aria-pressed="true"] { color: var(--color-ember-orange, #ff4700); }

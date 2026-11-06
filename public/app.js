@@ -1232,7 +1232,7 @@ const PANEL_EDIT_CONTROLS = [
   'panel-delete', 'bg-image-input', 'bg-image-clear',
 ];
 function applyPanelEditability() {
-  const ro = isReadOnly();
+  const ro = isReadOnly() || (typeof panelIsCoord === 'function' && panelIsCoord());
   for (const id of PANEL_EDIT_CONTROLS) {
     const el = document.getElementById(id);
     if (el) el.disabled = ro;
@@ -2906,12 +2906,24 @@ function addGraphEdge(edge) {
 // them when asked (the toggle is the next step, S2; until then `?coord=include`
 // in the page URL is the way to see them). Every list-level read below sends
 // the same knob so the canvas, the kanban and the reader agree.
+function coordPrefKey(gid) {
+  return `multitap:coord-visible:${gid}`;
+}
+function coordVisible(gid) {
+  try { return localStorage.getItem(coordPrefKey(gid)) === '1'; } catch { return false; }
+}
+function setCoordVisible(gid, on) {
+  try {
+    if (on) localStorage.setItem(coordPrefKey(gid), '1');
+    else localStorage.removeItem(coordPrefKey(gid));
+  } catch { /* no storage: the toggle lasts for this page only */ }
+}
 function coordParam() {
   try {
     const v = new URLSearchParams(location.search).get('coord');
     if (v === 'include' || v === 'only' || v === 'exclude') return v;
-  } catch { /* no URL to read: hide, like the default */ }
-  return 'exclude';
+  } catch { /* no URL to read: fall through to the preference */ }
+  return coordVisible(typeof activeGraphId === 'string' ? activeGraphId : '') ? 'include' : 'exclude';
 }
 
 async function fetchGraph({ diff = false } = {}) {
@@ -2959,6 +2971,9 @@ async function fetchGraph({ diff = false } = {}) {
       status: node.status || 'todo',
       color: (node.meta && node.meta.color) || DEFAULT_NODE_COLOR,
       meta: node.meta || {},
+      // One data model: a node the coordination engine keeps (meta.coord) wears
+      // a dashed border on the canvas, so a claim reads as a claim at a glance.
+      coord: node.meta && node.meta.coord ? 1 : 0,
       version: typeof node.version === 'number' ? node.version : 0,
     };
     if (bgUrl) nodeData.backgroundImage = bgUrl;
@@ -4239,6 +4254,42 @@ let panelLoadedMeta = {};
 let panelLoadedVersion = null;
 let panelLoadedContent = null;
 
+// One data model, S2a: the panel's coordination section. A coordination node
+// carries the engine's document under meta.coord; the section says what it
+// means in plain words (public/coord-summary.js) and the rest of the form goes
+// read-only for it — the statement and these fields change through the engine
+// (the owner rule, 409 coordination_node on the server), while position and
+// colour still change here like on any node.
+let panelLoadedCoord = null;
+function panelIsCoord() {
+  return !!panelLoadedCoord;
+}
+function renderCoordSection(coord) {
+  const section = document.getElementById('coord-section');
+  if (!section) return;
+  document.body.classList.toggle('panel-coord', !!coord);
+  if (!coord || !window.CoordSummary) {
+    section.classList.add('hidden');
+    return;
+  }
+  const note = document.getElementById('coord-note');
+  if (note) note.textContent = window.CoordSummary.COORD_NOTE;
+  const rows = document.getElementById('coord-rows');
+  if (rows) {
+    rows.textContent = '';
+    for (const { label, value } of window.CoordSummary.summarize(coord, Date.now())) {
+      const dt = document.createElement('dt');
+      dt.textContent = label;
+      const dd = document.createElement('dd');
+      dd.textContent = value;
+      rows.append(dt, dd);
+    }
+  }
+  const doc = document.getElementById('coord-document');
+  if (doc) doc.textContent = window.CoordSummary.documentText(coord);
+  section.classList.remove('hidden');
+}
+
 function loadIntoEditor(content, task = null) {
   // richEditor.setMarkdown below fires a synthetic 'change' event, which
   // would normally schedule a save. That save would PATCH the task with
@@ -4257,6 +4308,13 @@ function loadIntoEditor(content, task = null) {
   if (richEditor) richEditor.setMarkdown(body, false);
   lastSavedContent = content;
   syncBackgroundImageRow();
+  // The row's meta is the server's parse of the frontmatter (nested objects
+  // included); the client's parseFrontmatter above reads flat keys only.
+  panelLoadedCoord = task && task.meta && task.meta.coord && typeof task.meta.coord === 'object' ? task.meta.coord : null;
+  renderCoordSection(panelLoadedCoord);
+  // showPanel applied editability before this row arrived; apply it again now
+  // that we know whether the node is the engine's.
+  applyPanelEditability();
   // One-shot hook for the search bar's commit flow: highlight-the-match needs
   // the body RENDERED first. Double-rAF so ProseMirror has painted.
   if (_searchEditorLoadedHook) {
@@ -7704,6 +7762,7 @@ async function switchActiveGraph(id, { pushState = false } = {}) {
   presenceState = new Map();
   accessDenied = false;
   activeGraphId = id;
+  if (typeof window.__paintCoordToggle === 'function') window.__paintCoordToggle();
   invalidateSearchDocs();
   if (isSearchBarOpen()) closeSearchBar({ restore: false });
   try { localStorage.setItem(ACTIVE_GRAPH_STORAGE_KEY, String(id)); } catch {}
@@ -9348,6 +9407,9 @@ function cytoscapeStyleDark() {
     { selector: 'node[status = "in_progress"]', style: { 'border-color': '#ffffff', 'border-width': 2 } },
     { selector: 'node[status = "review"]', style: { 'border-color': '#ff4700', 'border-width': 2, 'border-style': 'dashed', 'border-dash-pattern': [6, 4] } },
     { selector: 'node[status = "done"]', style: { 'border-color': '#cccccc', 'border-opacity': 0.35, 'opacity': 0.55 } },
+    // One data model: a node the coordination engine keeps (meta.coord) wears a
+    // double border, whatever its status colour — dashed already means review.
+    { selector: 'node[coord = 1]', style: { 'border-style': 'double', 'border-width': 3 } },
     { selector: 'node[color]', style: { 'background-color': 'data(color)' } },
     // Image-bearing nodes: TWO REGIONS. The top region is a normal label-
     // sized text area with 16px padding on all four sides. The bottom region
@@ -9493,6 +9555,9 @@ function cytoscapeStyleLight() {
     { selector: 'node[status = "in_progress"]', style: { 'background-color': _statusPalette.in_progress.fill, 'border-color': _statusPalette.in_progress.stroke, 'color': _statusPalette.in_progress.stroke } },
     { selector: 'node[status = "review"]',      style: { 'background-color': _statusPalette.review.fill,      'border-color': _statusPalette.review.stroke,      'color': _statusPalette.review.stroke } },
     { selector: 'node[status = "done"]',        style: { 'background-color': _statusPalette.done.fill,        'border-color': _statusPalette.done.stroke,        'color': _statusPalette.done.stroke } },
+    // One data model: a node the coordination engine keeps (meta.coord) wears a
+    // double border, whatever its status colour — dashed already means review.
+    { selector: 'node[coord = 1]', style: { 'border-style': 'double', 'border-width': 3 } },
     { selector: 'node[color]', style: { 'background-color': 'data(color)' } },
     // Image-bearing nodes: TWO REGIONS. The top region is a normal label-
     // sized text area with 16px padding on all four sides. The bottom region
@@ -10749,6 +10814,22 @@ document.addEventListener('DOMContentLoaded', () => {
     setReaderMode(!document.body.classList.contains('view-reader'));
   }));
   if (readerModeOn()) readerBtns.forEach((b) => b.setAttribute('aria-pressed', 'true'));
+  // Coordination nodes toggle (one data model, S2a): per-graph preference,
+  // then the list reads refetch with the new `coord=` knob.
+  const coordBtn = document.getElementById('sidebar-coord-btn');
+  if (coordBtn) {
+    const paint = () => coordBtn.setAttribute('aria-pressed', coordVisible(activeGraphId) ? 'true' : 'false');
+    coordBtn.addEventListener('click', async () => {
+      if (!activeGraphId) return;
+      setCoordVisible(activeGraphId, !coordVisible(activeGraphId));
+      paint();
+      await fetchGraph();
+      if (currentView === 'kanban' && typeof renderKanban === 'function') await renderKanban();
+      showHint(coordVisible(activeGraphId) ? 'Showing coordination nodes' : 'Hiding coordination nodes');
+    });
+    window.__paintCoordToggle = paint;
+    paint();
+  }
   if (appSettingsBtn) appSettingsBtn.addEventListener('click', () => {
     if (isSidebarCollapsed()) setSidebarCollapsed(false);
     openSettings();
