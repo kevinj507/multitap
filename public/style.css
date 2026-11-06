@@ -4704,3 +4704,9 @@ body.presence-hidden .presence-eye:hover {
 .coord-document pre { margin: var(--space-2, 8px) 0 0; max-height: 240px; overflow: auto; font-size: var(--text-meta, 11px); }
 body.panel-coord #task-form .body-section { opacity: 0.85; }
 #sidebar-coord-btn[aria-pressed="true"] { color: var(--color-ember-orange, #ff4700); }
+
+.coord-actions { display: flex; flex-wrap: wrap; gap: var(--space-2, 8px); margin: var(--space-2, 8px) 0 0; }
+.coord-actions:empty { display: none; }
+.coord-action { font: inherit; font-size: var(--text-body-sm, 13px); padding: 4px 10px; border: 1px solid currentColor; border-radius: var(--radius-md, 4px); background: transparent; color: inherit; cursor: pointer; }
+.coord-action:hover { background: color-mix(in srgb, currentColor 10%, transparent); }
+.coord-action[disabled] { opacity: 0.5; cursor: progress; }

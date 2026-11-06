@@ -4287,7 +4287,67 @@ function renderCoordSection(coord) {
   }
   const doc = document.getElementById('coord-document');
   if (doc) doc.textContent = window.CoordSummary.documentText(coord);
+  renderCoordActions(coord);
   section.classList.remove('hidden');
+}
+
+// S2b: the engine's actions a person may take here, as buttons. Each calls the
+// engine's route with this page's own session (S3: the engine answers to the
+// record's sign-in); the server says no with 401/403 when the person may not.
+// After an action the graph and the panel reload from the server — the engine
+// wrote the node, the canvas only shows it.
+function renderCoordActions(coord) {
+  const box = document.getElementById('coord-actions');
+  if (!box) return;
+  box.textContent = '';
+  if (!window.CoordActions || isReadOnly()) return;
+  for (const action of window.CoordActions.actionsFor(coord)) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'coord-action';
+    btn.textContent = action.label;
+    btn.title = action.hint || '';
+    btn.addEventListener('click', () => runCoordAction(action, btn));
+    box.append(btn);
+  }
+}
+
+async function runCoordAction(action, btn) {
+  const taskId = editingTaskId;
+  const body = { ...(action.body || {}) };
+  if (action.ask === 'reason') {
+    // The viewer shows no prompt dialogs in some hosts; a reason is optional
+    // for the engine, so an unavailable prompt is simply no reason.
+    try {
+      const r = typeof window.prompt === 'function' ? window.prompt('Why? (optional, recorded with the answer)') : null;
+      if (r === null && typeof window.prompt === 'function') return; // cancelled
+      if (r) body.reason = r;
+    } catch { /* no prompt: go on without a reason */ }
+  }
+  btn.disabled = true;
+  try {
+    const res = await fetch(`${apiBase()}${action.path}`, {
+      method: action.method || 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    let payload = null;
+    try { payload = await res.json(); } catch { /* no body */ }
+    if (!res.ok) {
+      showHint(window.CoordActions.errorWords(res.status, payload));
+      return;
+    }
+    showHint(`${action.label}: done`);
+    await fetchGraph();
+    if (taskId && editingTaskId === taskId) {
+      const full = await fetch(`${apiBase()}/tasks/${taskId}`).then((r) => (r.ok ? r.json() : null)).catch(() => null);
+      if (full) loadIntoEditor(full.content, full);
+    }
+  } catch (err) {
+    showHint(err && err.message ? err.message : 'The engine could not be reached');
+  } finally {
+    btn.disabled = false;
+  }
 }
 
 function loadIntoEditor(content, task = null) {

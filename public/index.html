@@ -244,6 +244,7 @@
         </div>
         <p class="coord-section-note" id="coord-note"></p>
         <dl class="coord-rows" id="coord-rows"></dl>
+        <div class="coord-actions" id="coord-actions"></div>
         <details class="coord-document">
           <summary>The whole document</summary>
           <pre id="coord-document"></pre>
@@ -730,6 +731,8 @@
     window.ReaderToc = ReaderToc;
     import * as CoordSummary from '/coord-summary.js';
     window.CoordSummary = CoordSummary;
+    import * as CoordActions from '/coord-actions.js';
+    window.CoordActions = CoordActions;
   </script>
   <!-- Reader citation parser (E16 footnotes): app.js reads window.ReaderCite to
        turn [[cite:<id>]] markers into numbered footnotes. -->
