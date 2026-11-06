@@ -4,7 +4,17 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 export function createPool(connectionString) {
-  return new pg.Pool({ connectionString });
+  const pool = new pg.Pool({ connectionString });
+  // An idle connection the server drops (a database re-provisioned at
+  // publish, a restart, a network blip) surfaces as an 'error' event on the
+  // pool. Unhandled, that event ends the process — which is how the app
+  // crash-looped for ten minutes on 2026-11-06 while the platform
+  // re-provisioned its database. Handled, the pool discards the dead client
+  // and the next query opens a fresh one.
+  pool.on('error', (err) => {
+    console.error('[db] idle connection dropped:', err.message);
+  });
+  return pool;
 }
 
 // Apply db/schema.sql against the live pool. Schema is idempotent (CREATE
