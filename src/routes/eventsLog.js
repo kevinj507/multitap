@@ -33,7 +33,7 @@
 // the `Math.max` below repairs. Skipping is unrecoverable; re-delivering is not.
 
 import pool from '../db.js';
-import { EVENT_KINDS } from '../events/kinds.js';
+import { EVENT_KINDS, isCoordKind } from '../events/kinds.js';
 
 const DEFAULT_LIMIT = 200;
 const MAX_LIMIT = 1000;
@@ -66,7 +66,9 @@ export function parseEventsQuery(query) {
   const q = query ?? {};
   const since = intParam(q.since, 'since', 0, { min: 0, max: Number.MAX_SAFE_INTEGER, error: SINCE_ERROR });
   const limit = intParam(q.limit, 'limit', DEFAULT_LIMIT, { min: 1, max: MAX_LIMIT, error: LIMIT_ERROR });
-  const kind = enumParam(q.kind, EVENT_KINDS, KIND_ERROR);
+  // `?kind=` accepts the record's own kinds and the engine's `coord.*` family
+  // (kinds.js isCoordKind), which the CHECK admits by prefix.
+  const kind = isCoordKind(q.kind) ? { value: q.kind } : enumParam(q.kind, EVENT_KINDS, KIND_ERROR);
   const subjectKind = enumParam(q.subject_kind, SUBJECT_KINDS, SUBJECT_KIND_ERROR);
   const subjectId = intParam(q.subject_id, 'subject_id', null, {
     min: 1,

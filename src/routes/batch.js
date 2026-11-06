@@ -8,6 +8,7 @@ import {
 } from '../events/context.js';
 import { parseMarkdown, serializeMarkdown, validateMeta, applyDefaults } from '../markdown.js';
 import { mergeFields } from '../merge.js';
+import { coordNodeChangeRefusal, COORD_NODE_ERROR, COORD_NODE_DETAIL } from '../coordOwner.js';
 import { normalizeMeta, flattenEdge, unflattenEdge, resolveEdgeKind } from './edges.js';
 
 // Batch upsert (E14.1) — write many nodes + edges in ONE transactional call.
@@ -343,6 +344,14 @@ router.post('/', async (req, res) => {
           const finalMeta = applyDefaults(out.meta); // stringify text fields; default status only if truly absent on both sides
           const vErr = validateMeta(finalMeta);
           if (vErr) throw new BatchError(409, `merged node invalid: ${vErr}`, { kind: 'node', index: i });
+          // D4, the owner rule (src/coordOwner.js): an upsert that lands on a
+          // node the coordination engine keeps may change layout fields only.
+          // This is the path an agent would take to overwrite a claim by its
+          // external_id, so the rule lives here too.
+          {
+            const why = coordNodeChangeRefusal(cur.meta, curParsed.body, finalMeta, out.body);
+            if (why) throw new BatchError(409, `${COORD_NODE_ERROR}: ${COORD_NODE_DETAIL} (${why})`, { kind: 'node', index: i });
+          }
           // Idempotent no-op: a re-run that changes nothing skips the write, so
           // it doesn't bump version/updated_at, fire SSE, or wake the indexer —
           // and run_id keeps its CREATION value (see schema comment).

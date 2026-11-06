@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import pool from '../db.js';
 import { cacheControlFor, graphAsOf, parseAsOfQuery } from '../events/store.js';
+import { parseNodeFilter, nodeFilterSql, filterGraphPayload } from '../nodeFilter.js';
 
 const router = Router({ mergeParams: true });
 
@@ -65,7 +66,13 @@ router.get('/shortest-path', async (req, res) => {
 // through to exactly the two queries it has always run — no snapshot lookup, no
 // events lookup, same SQL, same body. That is a locked decision, and
 // tests/e18-asof.test.js pins it with a `pool.query` spy.
+// ?types=, ?exclude_types=, ?coord= — the shared node filter (src/nodeFilter.js,
+// R1 of the one-data-model design). A link survives only when both of its ends
+// do. The as-of path applies the same filter to the folded payload, so a view
+// of the past and a view of the present answer the same question.
 router.get('/', async (req, res, next) => {
+  const filter = parseNodeFilter(req.query);
+  if (filter.error) return res.status(400).json({ error: filter.error });
   const asOfParams = parseAsOfQuery(req.query);
   if (asOfParams.error) return res.status(400).json({ error: asOfParams.error });
   if (asOfParams.value) {
@@ -74,13 +81,15 @@ router.get('/', async (req, res, next) => {
       // The RESOLVED envelope decides the header, not just the query: an
       // asOfSeq past the head was clamped to the live head and is not immutable.
       res.set('Cache-Control', cacheControlFor(asOfParams.value, out.as_of));
-      return res.json(out);
+      return res.json(filterGraphPayload(out, filter.value));
     } catch (err) {
       return next(err);
     }
   }
 
   const { gid } = req.params;
+  const nodeParams = [gid];
+  const nodeFilter = nodeFilterSql(filter.value, '', nodeParams);
   const nodes = await pool.query(
     // external_id rides along so the node page can resolve wiki-links like
     // [[todo:fanout-claim-lease]] to a task id client-side (node.js
@@ -88,8 +97,8 @@ router.get('/', async (req, res, next) => {
     // ignores it.
     `SELECT id, meta->>'title' AS title, meta->>'description' AS description,
             meta->>'status' AS status, meta, version, external_id
-     FROM tasks WHERE graph_id = $1 ORDER BY id`,
-    [gid]
+     FROM tasks WHERE graph_id = $1${nodeFilter} ORDER BY id`,
+    nodeParams
   );
   const links = await pool.query(
     // Emit `purpose` (canonical, E15.A1) AND the derived `type` so the canvas
@@ -98,7 +107,12 @@ router.get('/', async (req, res, next) => {
      FROM edges WHERE graph_id = $1 ORDER BY id`,
     [gid]
   );
-  res.json({ nodes: nodes.rows, links: links.rows });
+  if (filter.value.isEmpty) return res.json({ nodes: nodes.rows, links: links.rows });
+  const alive = new Set(nodes.rows.map((n) => n.id));
+  res.json({
+    nodes: nodes.rows,
+    links: links.rows.filter((l) => alive.has(l.source) && alive.has(l.target)),
+  });
 });
 
 export default router;

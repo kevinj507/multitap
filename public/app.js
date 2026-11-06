@@ -2898,9 +2898,25 @@ function addGraphEdge(edge) {
 // Every other caller (boot, graph switch, explicit reload) wants the full
 // rebuild, since there is nothing to diff against or the arrangement should be
 // recomputed from scratch.
+// One data model (Multitap er289bkv2zkcs5w6 #11334, R1; Kevin 2026-11-06): the
+// coordination engine's nodes — claims, lines, its findings and decisions, the
+// ones carrying a `meta.coord` document — are hidden from the canvas by
+// default. A knowledge graph, a research graph or a project plan never has
+// them and must look exactly as before; a graph that uses the engine shows
+// them when asked (the toggle is the next step, S2; until then `?coord=include`
+// in the page URL is the way to see them). Every list-level read below sends
+// the same knob so the canvas, the kanban and the reader agree.
+function coordParam() {
+  try {
+    const v = new URLSearchParams(location.search).get('coord');
+    if (v === 'include' || v === 'only' || v === 'exclude') return v;
+  } catch { /* no URL to read: hide, like the default */ }
+  return 'exclude';
+}
+
 async function fetchGraph({ diff = false } = {}) {
   const wasAccessDenied = accessDenied;
-  const res = await fetch(`${apiBase()}/graph`);
+  const res = await fetch(`${apiBase()}/graph?coord=${coordParam()}`);
   if (!res.ok) {
     if (res.status === 403) {
       accessDenied = true;
@@ -3144,7 +3160,7 @@ function consumePendingNodeFocus() {
 
 async function updateLeafHighlights() {
   // fields=id: highlighting only needs ids; the full rows are ~170KB here.
-  const res = await fetch(`${apiBase()}/tasks/leaves?fields=id`);
+  const res = await fetch(`${apiBase()}/tasks/leaves?fields=id&coord=${coordParam()}`);
   const leaves = await res.json();
   const leafIds = new Set(leaves.map((t) => String(t.id)));
 
@@ -4397,7 +4413,7 @@ async function loadSearchDocs() {
   if (_searchDocsCache.gid === gid && _searchDocsCache.docs) return _searchDocsCache.docs;
   if (_searchDocsCache.gid === gid && _searchDocsCache.loading) return _searchDocsCache.loading;
   const p = (async () => {
-    const res = await fetch(`${apiBase()}/tasks`);
+    const res = await fetch(`${apiBase()}/tasks?coord=${coordParam()}`);
     if (!res.ok) throw new Error(`search: failed to load tasks (${res.status})`);
     const rows = await res.json();
     const docs = rows.map((row) => {
@@ -6154,7 +6170,7 @@ async function renderKanban() {
   );
   let tasks;
   try {
-    const res = await fetch(`${apiBase()}/tasks`);
+    const res = await fetch(`${apiBase()}/tasks?coord=${coordParam()}`);
     if (!res.ok) return;
     tasks = await res.json();
   } catch { return; }

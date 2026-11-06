@@ -13,6 +13,7 @@
 import { Router } from 'express';
 import pool from '../db.js';
 import { derivePlanRegions, ALL_PURPOSES, DEFAULT_PURPOSES } from '../planRegions.js';
+import { parseNodeFilter, nodeFilterSql } from '../nodeFilter.js';
 
 const router = Router({ mergeParams: true });
 
@@ -50,22 +51,37 @@ router.post('/', async (req, res, next) => {
     minRegionSize = b.minRegionSize;
   }
 
+  // `types`, `exclude_types`, `coord` in the body — the shared node filter
+  // (src/nodeFilter.js, R1 of the one-data-model design). The regions are
+  // built from the nodes that pass, and from the edges between them: a filter
+  // asks "the shape of THIS part of the graph", so an edge to a filtered-out
+  // node is not part of that shape.
+  const filter = parseNodeFilter(b);
+  if (filter.error) return res.status(400).json({ error: filter.error });
+
   try {
+    const nodeParams = [gid];
+    const nodeFilter = nodeFilterSql(filter.value, 't', nodeParams);
     const { rows: nodes } = await pool.query(
       `SELECT t.id,
               t.meta->>'title'  AS title,
               t.meta->>'status' AS status,
               (t.meta->>'confidence')::float AS confidence
-         FROM tasks t WHERE t.graph_id = $1 ORDER BY t.id`,
-      [gid],
+         FROM tasks t WHERE t.graph_id = $1${nodeFilter} ORDER BY t.id`,
+      nodeParams,
     );
     // ALL edges: planRegions filters by `purposes` for region-building but needs
     // the full `required for` set to compute readiness honestly (a prerequisite
     // in another region still blocks).
-    const { rows: edges } = await pool.query(
+    const { rows: allEdges } = await pool.query(
       'SELECT source_id, target_id, purpose FROM edges WHERE graph_id = $1',
       [gid],
     );
+    let edges = allEdges;
+    if (!filter.value.isEmpty) {
+      const alive = new Set(nodes.map((n) => n.id));
+      edges = allEdges.filter((e) => alive.has(e.source_id) && alive.has(e.target_id));
+    }
 
     const result = derivePlanRegions({ nodes, edges }, { purposes, minRegionSize });
     res.json(result);

@@ -25,6 +25,7 @@ import { MIN_PROPAGATION, MAX_PROPAGATION } from '../doubt.js';
 // module so the write path and the branch derivation cannot disagree about what
 // a legal role is.
 import { BRANCH_META_KEY, normalizeBranch } from '../branches.js';
+import { isCoordMeta, COORD_NODE_ERROR, COORD_EDGE_DETAIL } from '../coordOwner.js';
 
 // Re-export the pure derivation helpers so existing importers (batch.js, tests)
 // can keep pulling them from the edges route module.
@@ -421,6 +422,11 @@ router.patch('/:id', validateId, async (req, res) => {
   );
   if (current.rows.length === 0) return res.status(410).json({ error: 'edge no longer exists' });
   const existing = current.rows[0];
+  // D4, the owner rule: an edge the coordination engine wrote (meta.coord) is
+  // the engine's; it changes through the coordination routes only.
+  if (isCoordMeta(existing.meta)) {
+    return res.status(409).json({ error: COORD_NODE_ERROR, detail: COORD_EDGE_DETAIL, current: existing });
+  }
 
   // The writer's "base view" — the row state they think they're editing
   // against. Used both as the diff base for the merge and as the source of
@@ -560,6 +566,13 @@ router.delete('/:id', validateId, async (req, res) => {
   const { gid, id } = req.params;
   if (rejectBadHappenedAt(req, res)) return;
   if (await rejectBadCauseId(req, res, gid)) return;
+  // D4, the owner rule: the coordination engine's edges go with its claims.
+  {
+    const cur = await pool.query('SELECT meta FROM edges WHERE id = $1 AND graph_id = $2', [id, gid]);
+    if (cur.rows.length && isCoordMeta(cur.rows[0].meta)) {
+      return res.status(409).json({ error: COORD_NODE_ERROR, detail: COORD_EDGE_DETAIL });
+    }
+  }
   const result = await eventQuery(
     req,
     'DELETE FROM edges WHERE id = $1 AND graph_id = $2 RETURNING id',

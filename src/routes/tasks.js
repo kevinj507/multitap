@@ -16,6 +16,8 @@ import { worldlineHandler } from './worldline.js';
 import { requireGraph } from '../auth/require.js';
 import { exciseNodeFromGenesis } from '../events/snapshot.js';
 import { dropDerivedForGraph } from '../derivedCache.js';
+import { parseNodeFilter, nodeFilterSql } from '../nodeFilter.js';
+import { coordNodeChangeRefusal, isCoordMeta, COORD_NODE_ERROR, COORD_NODE_DETAIL } from '../coordOwner.js';
 
 // Tasks store frontmatter (meta) + body in a single markdown blob. To do
 // field-level three-way merge, we flatten {meta, body} into one object.
@@ -90,11 +92,17 @@ router.post('/', async (req, res) => {
   }
 });
 
+// ?types=, ?exclude_types=, ?coord= — the shared node filter (src/nodeFilter.js,
+// R1 of the one-data-model design). Absent, the list is exactly what it was.
 router.get('/', async (req, res) => {
   const { gid } = req.params;
+  const filter = parseNodeFilter(req.query);
+  if (filter.error) return res.status(400).json({ error: filter.error });
+  const params = [gid];
   const result = await pool.query(
-    'SELECT * FROM tasks WHERE graph_id = $1 ORDER BY created_at DESC',
-    [gid]
+    `SELECT * FROM tasks WHERE graph_id = $1${nodeFilterSql(filter.value, '', params)}
+     ORDER BY created_at DESC`,
+    params
   );
   res.json(result.rows);
 });
@@ -107,15 +115,18 @@ router.get('/leaves', async (req, res) => {
   // measured 4x the size of the entire /graph payload. Default shape stays
   // the full row so existing consumers are unaffected.
   const idsOnly = req.query.fields === 'id';
+  const filter = parseNodeFilter(req.query);
+  if (filter.error) return res.status(400).json({ error: filter.error });
+  const params = [gid];
   const result = await pool.query(
     `SELECT ${idsOnly ? 't.id' : 't.*'} FROM tasks t
      WHERE t.graph_id = $1
        AND NOT EXISTS (
          SELECT 1 FROM edges e
          WHERE e.target_id = t.id AND e.type = 'dependency'
-       )
+       )${nodeFilterSql(filter.value, 't', params)}
      ORDER BY t.id`,
-    [gid]
+    params
   );
   res.json(result.rows);
 });
@@ -164,6 +175,12 @@ router.get('/ready', async (req, res) => {
   // "we are not doing this" — LEAKS THE WHOLE BRANCH into the queue.
   const includeDormant = req.query.includeDormant === '1'
     || req.query.includeDormant === 'true';
+  // R1 — ?types=, ?exclude_types=, ?coord=. RESULT ROWS ONLY, like the two
+  // exclusions below: a filtered prerequisite still blocks.
+  const filter = parseNodeFilter(req.query);
+  if (filter.error) return res.status(400).json({ error: filter.error });
+  const params = [gid];
+  const filterSql = nodeFilterSql(filter.value, 't', params);
   const result = await pool.query(
     `WITH RECURSIVE prereqs AS (
        SELECT t.id AS root, e.source_id AS prereq
@@ -204,8 +221,9 @@ router.get('/ready', async (req, res) => {
         -- its dependents — the locked "nothing auto-flips a status" rule. A
         -- dormant prerequisite still blocks.
         ${includeDormant ? '' : `AND ${notDormantSql('t')}`}
+        ${filterSql}
       ORDER BY t.id`,
-    [gid]
+    params
   );
   res.json(result.rows);
 });
@@ -318,6 +336,18 @@ router.patch('/:id', validateId, async (req, res) => {
     mergedBody = out.body;
   }
 
+  // D4, the owner rule (src/coordOwner.js): on a node the coordination engine
+  // keeps, this route may change layout fields and nothing else — the engine
+  // would overwrite anything else at its next save without the agent seeing it.
+  // Steering goes through the coordination routes, which record the act.
+  {
+    const curParsed = parseMarkdown(cur.content);
+    const why = coordNodeChangeRefusal(cur.meta, curParsed.body, mergedMeta, mergedBody);
+    if (why) {
+      return res.status(409).json({ error: COORD_NODE_ERROR, detail: `${COORD_NODE_DETAIL} (${why})`, current: cur });
+    }
+  }
+
   const normalized = serializeMarkdown(mergedMeta, mergedBody);
   const result = await eventQuery(
     req,
@@ -401,6 +431,16 @@ router.delete('/:id', validateId, async (req, res) => {
   const { gid, id } = req.params;
   if (rejectBadHappenedAt(req, res)) return;
   if (await rejectBadCauseId(req, res, gid)) return;
+  // D4, the owner rule: a node the coordination engine keeps is not deleted
+  // here — the engine's state would point at a node that is gone. The engine's
+  // routes retire a claim (amend, supersede) and DELETE /api/graphs/{gid}
+  // removes everything together.
+  {
+    const cur = await pool.query('SELECT meta FROM tasks WHERE id = $1 AND graph_id = $2', [id, gid]);
+    if (cur.rows.length && isCoordMeta(cur.rows[0].meta)) {
+      return res.status(409).json({ error: COORD_NODE_ERROR, detail: `${COORD_NODE_DETAIL} (deletes the node)` });
+    }
+  }
   // The FK cascade destroys every incident edge and this handler never learns
   // their ids (it returns {deleted: <task id>}). The row triggers do: the
   // BEFORE-DELETE task trigger lands node.removed first, then each cascaded

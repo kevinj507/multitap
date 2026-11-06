@@ -713,6 +713,8 @@ sets these fields behaves exactly as before.
 
 All task/edge/graph-view routes are scoped to a graph via `:gid`.
 
+**Node filter on the read routes** (`GET /tasks`, `/tasks/leaves`, `/tasks/ready`, `/graph`, and the body of `POST /structure`): `types=a,b` keeps only nodes of those types, `exclude_types=a,b` drops them (a node with no type is never dropped), and `coord=include|exclude|only` addresses the **coordination engine's nodes** — claims, lines, the engine's findings, assumptions and decisions, which carry the engine's document under `meta.coord`. The marker is the document, not the type (`finding` and `decision` are ordinary types too). Default `include`, so nothing changes for existing clients; the canvas asks for `exclude` (a knowledge graph or a research graph never has such nodes). On `/ready` the filter narrows the answer only — a filtered prerequisite still blocks. **The owner rule:** a coordination node's statement and `meta.coord` change only through the coordination routes; `PATCH`/`DELETE` here (and a `/batch` upsert onto one) answer `409 {error: "coordination_node"}`, layout fields (`x`, `y`, `color`, `background-image`) excepted; the engine's edges (`meta.coord`) likewise. The engine's own events join the log as the `coord.*` family (`coord.claim.landed`, …), written by `gt_log_coord()`, annotations to the fold, listable with `GET /events?format=json&kind=coord.…`. (One data model, 2026-11-06.)
+
 | Method | Path | Notes |
 |---|---|---|
 | GET | `/api/graphs` | List graphs, ordered by `updated_at DESC` |

@@ -815,6 +815,15 @@ ALTER TABLE events ADD COLUMN IF NOT EXISTS payload_salt TEXT;
 -- this block then fails on the feature's own rows (reproduced verbatim:
 -- `check constraint "events_kind_valid" ... is violated by some row`).
 -- E18.6 added 'node.excised' the same way.
+-- 2026-11-06 (one data model, Multitap er289bkv2zkcs5w6 #11334 D5): the
+-- coordination engine's own events join this log as the `coord.*` FAMILY —
+-- `coord.claim.landed`, `coord.finding.filed`, … — admitted by prefix rather
+-- than one literal each, because the engine's event vocabulary is defined in
+-- its own code (Go `EventType` constants) and grows with it; listing every
+-- member here would make each new engine event a schema change in two repos.
+-- They are ANNOTATIONS to the fold (kinds.js isCoordKind, fold.js): the state
+-- of the claim's node is carried by the ordinary node.* events its row writes.
+-- Written only through gt_log_coord() below.
 DO $$ BEGIN
   ALTER TABLE events DROP CONSTRAINT IF EXISTS events_kind_valid;
   ALTER TABLE events ADD CONSTRAINT events_kind_valid CHECK (kind IN (
@@ -822,7 +831,8 @@ DO $$ BEGIN
     'status.changed','field.set','claim.verified','claim.refuted',
     'decision.made','decision.reopened','node.superseded','node.excised',
     'edge.added','edge.removed','edge.retyped','edge.rewired','edge.patched',
-    'graph.id_rotated','graph.deleted'));
+    'graph.id_rotated','graph.deleted')
+    OR kind LIKE 'coord.%');
 END $$;
 
 CREATE INDEX IF NOT EXISTS events_graph_learned_idx  ON events (graph_id, learned_at, seq);
@@ -1492,3 +1502,54 @@ CREATE TRIGGER gt_log_graph_rotate AFTER UPDATE OF id ON graphs
 DROP TRIGGER IF EXISTS gt_log_graph_delete ON graphs;
 CREATE TRIGGER gt_log_graph_delete BEFORE DELETE ON graphs
   FOR EACH ROW EXECUTE FUNCTION gt_log_graph();
+
+-- ---- coordination events (one data model, 2026-11-06) -----------------------
+-- The coordination engine (Multitap's Go server; Superpose's core ported by its
+-- tests) keeps its records — claims, lines, its findings, assumptions and
+-- decisions — as nodes of this record, each with the engine's whole document
+-- under meta.coord (er289bkv2zkcs5w6 #11334, D1–D6). Its own log — "lease
+-- taken", "push seen", "landed", "finding filed" — joins THIS log through the
+-- one function below, so a graph has one history with one sequence.
+--
+--   kind         'coord.' || the engine's event type ('claim.landed', …)
+--   subject      the node that holds the engine record the event is mostly
+--                about ('node', its tasks.id), or NULL when the event concerns
+--                no single node (a line, the served reality)
+--   payload      {v:1, op:'ANNOTATE', kinds:[kind], coord_seq, at, claims:
+--                [engine ids], data:{…}} — `op` ANNOTATE for the same reason as
+--                gt_log_supersede: the fold must never read it as a row change,
+--                and says so loudly if its guard is ever removed. `coord_seq` is
+--                the engine's OWN per-graph sequence (its replay and its
+--                "events since" use it); the record's `seq` counts every event
+--                of the graph, so the two differ and both are kept. `at` is the
+--                engine's clock value for the event (milliseconds; synthetic in
+--                its tests), kept apart from happened_at, which is wall time.
+--   actor        gt_actor(), from the same session context the routes set, so
+--                the engine's writes are attributed like any agent's
+--   cause_id     NULL: the engine's causality is in `claims` and `data`
+--
+-- Returns the record's seq. Append-only like every event (gt_events_append_only).
+CREATE OR REPLACE FUNCTION gt_log_coord(
+  gid TEXT, etype TEXT, node_id BIGINT, coord_seq BIGINT, at_ms BIGINT, claims JSONB, data JSONB
+) RETURNS BIGINT AS $$
+DECLARE s BIGINT; k TEXT;
+BEGIN
+  IF etype IS NULL OR etype = '' OR etype LIKE 'coord.%' THEN
+    RAISE EXCEPTION 'gt_log_coord: etype must be the engine''s bare event type, got %', etype
+      USING ERRCODE = '22023';
+  END IF;
+  k := 'coord.' || etype;
+  s := gt_next_seq(gid);
+  INSERT INTO events (graph_id, seq, happened_at, learned_at, actor, kind,
+                      subject_kind, subject_id, cause_id, request_id, txid, payload)
+  VALUES (gid, s, gt_happened_at(), clock_timestamp(), gt_actor(), k,
+          CASE WHEN node_id IS NULL THEN NULL ELSE 'node' END, node_id,
+          NULL, gt_ctx('gt.request_id'), 0,
+          jsonb_build_object('v',1,'op','ANNOTATE',
+            'kinds', jsonb_build_array(k),
+            'coord_seq', coord_seq,
+            'at', at_ms,
+            'claims', COALESCE(claims, '[]'::jsonb),
+            'data', COALESCE(data, '{}'::jsonb)));
+  RETURN s;
+END $$ LANGUAGE plpgsql;

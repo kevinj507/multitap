@@ -52,6 +52,21 @@ export const EVENT_KINDS = Object.freeze([
   'graph.deleted',
 ]);
 
+// 2026-11-06 (one data model, er289bkv2zkcs5w6 #11334 D5). The coordination
+// engine's own events — "lease taken", "push seen", "landed", "finding filed"
+// — live in this log as the `coord.*` FAMILY: `'coord.' + the engine's event
+// type` (`coord.claim.landed`, `coord.finding.filed`, …). The CHECK admits the
+// family by prefix (`kind LIKE 'coord.%'`) because the vocabulary is defined by
+// the engine's code and grows with it, so EVENT_KINDS above stays the list of
+// this record's OWN kinds and the family is recognised by this predicate. A
+// coord event is an ANNOTATION to the fold, like node.superseded: the state of
+// the claim's node is carried by the node.* events its row writes, and the
+// coord event says what the engine did. Written only through gt_log_coord().
+export const COORD_KIND_PREFIX = 'coord.';
+export function isCoordKind(kind) {
+  return typeof kind === 'string' && kind.startsWith(COORD_KIND_PREFIX) && kind.length > COORD_KIND_PREFIX.length;
+}
+
 // The meta keys `gt_classify_node` reads by name. Anything OUTSIDE this set
 // that appears in `changes` also contributes `node.patched` — which is what
 // makes a body rewrite, an `external_id` change or a brand-new meta key

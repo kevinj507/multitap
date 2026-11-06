@@ -47,6 +47,7 @@
 // second copy of the same fact and a place for the two to drift.
 
 import { createHash } from 'node:crypto';
+import { isCoordKind } from './kinds.js';
 
 // Bumped only when the meaning of a stored `state` changes. It is written to
 // graph_snapshots.fold_version so a snapshot built by an older fold can be
@@ -334,7 +335,11 @@ function excisedMeta() {
 
 function applyToIndex(ix, event, anomalies) {
   const kind = event?.kind ?? null;
-  if (GRAPH_KINDS.has(kind) || ANNOTATION_KINDS.has(kind)) return;
+  // `coord.*` (one data model, 2026-11-06): the coordination engine's own
+  // events are annotations too — the claim's node state rides on the node.*
+  // events its row writes; these say what the engine did. Skipped here, never
+  // an anomaly.
+  if (GRAPH_KINDS.has(kind) || ANNOTATION_KINDS.has(kind) || isCoordKind(kind)) return;
 
   const payload = plainObject(event?.payload);
 
