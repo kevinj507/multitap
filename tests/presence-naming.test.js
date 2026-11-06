@@ -31,7 +31,9 @@ beforeAll(async () => {
   _setAdapterForTests(emailOnlyAdapter());
 });
 
-async function makeGraph(userId, anonRole) {
+// The presence read below is anonymous (by the URL), so the graph is opened to
+// viewers explicitly: new graphs are private by default since 2026-11-06.
+async function makeGraph(userId, anonRole = 'viewer') {
   const res = await request(app)
     .post('/api/graphs')
     .set('X-Test-User-Id', userId)

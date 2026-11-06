@@ -90,7 +90,7 @@ describe('Graph CRUD', () => {
     it('should default new graphs to anon_role=viewer (anyone with link can view)', async () => {
       const res = await request(app).post('/api/graphs').send({ name: 'viewer by default' });
       expect(res.status).toBe(201);
-      expect(res.body.anon_role).toBe('viewer');
+      expect(res.body.anon_role).toBe('none'); // private by default (Kevin, 2026-11-06)
     });
   });
 
@@ -194,7 +194,7 @@ describe('Graph CRUD', () => {
 
     it('should set anon_role through PATCH', async () => {
       const create = await request(app).post('/api/graphs').send({ name: 'toggle' });
-      expect(create.body.anon_role).toBe('viewer'); // default
+      expect(create.body.anon_role).toBe('none'); // default: private (Kevin, 2026-11-06)
       const r1 = await request(app)
         .patch(`/api/graphs/${create.body.id}`)
         .send({ anon_role: 'editor' });

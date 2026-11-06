@@ -277,17 +277,21 @@ CREATE INDEX IF NOT EXISTS graphs_owner_idx ON graphs (owner_user_id)
 -- 'none' = Restricted (only owner + explicit members); 'viewer' = anyone with
 -- the URL can read; 'editor' = anyone with the URL can edit. The graph URL
 -- /g/<gid> IS the share link — there is no separate invite-token URL.
--- Default is 'viewer' (friendlier-by-default for a collaboration tool); the
--- owner can lock it down via the Access section in the graph-modal.
+-- Default is 'none': a new graph is private to its owner and the people they
+-- invite until the owner opens it (Kevin, 2026-11-06: "new graphs should
+-- default to private"; it was 'viewer' before that day — existing graphs keep
+-- whatever they have). The owner opens a graph via the Access section in the
+-- graph-modal or `PATCH /api/graphs/:id {"anon_role": "viewer"}`. A graph
+-- with no owner (an instance without accounts) is unaffected: anyone holding
+-- its id may do anything, as before.
 ALTER TABLE graphs
-  ADD COLUMN IF NOT EXISTS anon_role TEXT NOT NULL DEFAULT 'viewer';
+  ADD COLUMN IF NOT EXISTS anon_role TEXT NOT NULL DEFAULT 'none';
 DO $$ BEGIN
   ALTER TABLE graphs DROP CONSTRAINT IF EXISTS graphs_anon_role_check;
   ALTER TABLE graphs ADD CONSTRAINT graphs_anon_role_check
     CHECK (anon_role IN ('none', 'viewer', 'editor'));
-  -- Update the column default too in case the table was created with the
-  -- earlier 'none' default. Idempotent.
-  ALTER TABLE graphs ALTER COLUMN anon_role SET DEFAULT 'viewer';
+  -- Set the column default on an existing table too. Idempotent.
+  ALTER TABLE graphs ALTER COLUMN anon_role SET DEFAULT 'none';
 END $$;
 
 -- Phase B5c also drops the old `is_public` column. Its two jobs (anonymous
@@ -347,7 +351,7 @@ CREATE TABLE IF NOT EXISTS invite_tokens (
   -- link. Default 'viewer' mirrors Google Docs' "Anyone with the link can
   -- view". Set to 'none' for strict "must sign in to view" mode, 'editor'
   -- for fully-open collaboration. `role` is what signed-in claimers become.
-  anon_role TEXT NOT NULL DEFAULT 'viewer'
+  anon_role TEXT NOT NULL DEFAULT 'none'
     CHECK (anon_role IN ('none', 'viewer', 'editor')),
   token_hash TEXT NOT NULL UNIQUE,
   created_by UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -355,7 +359,7 @@ CREATE TABLE IF NOT EXISTS invite_tokens (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 ALTER TABLE invite_tokens
-  ADD COLUMN IF NOT EXISTS anon_role TEXT NOT NULL DEFAULT 'viewer';
+  ADD COLUMN IF NOT EXISTS anon_role TEXT NOT NULL DEFAULT 'none';
 DO $$ BEGIN
   ALTER TABLE invite_tokens DROP CONSTRAINT IF EXISTS invite_tokens_anon_role_check;
   ALTER TABLE invite_tokens

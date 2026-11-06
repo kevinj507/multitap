@@ -99,7 +99,7 @@ Three layers in order of strictness. When `auth_enabled: false`, only the third 
 
 1. **Owner** (`graphs.owner_user_id`) — set when a signed-in user creates the graph. Full read/write/manage.
 2. **Members** (`graph_members.role`) — `viewer` or `editor`, per user. Granted by the owner via the in-app Access panel (or `POST /api/graphs/:gid/members {email, role}`). If the invitee has no account yet, the row sits in `pending_members` until they sign in for the first time, when it auto-claims into a real member row.
-3. **Anonymous tier** (`graphs.anon_role`) — what someone hitting the URL gets if they aren't the owner or a member. Values: `none` (URL → 403), `viewer` (read only), `editor` (read+write, attributed anonymously). Default `viewer`. Owner changes it via `PATCH /api/graphs/:id {anon_role}`.
+3. **Anonymous tier** (`graphs.anon_role`) — what someone hitting the URL gets if they aren't the owner or a member. Values: `none` (URL → 403), `viewer` (read only), `editor` (read+write, attributed anonymously). **Default `none` since 2026-11-06: a new graph is private to its owner and members until the owner opens it** (graphs made before that day kept `viewer`). Owner changes it via `PATCH /api/graphs/:id {anon_role}` — so before handing someone a graph link, set `viewer` (or invite them as a member).
 
 Legacy graphs (`owner_user_id IS NULL`, created before Phase B or on a no-auth instance) always behave as URL-bearer regardless of mode.
 
