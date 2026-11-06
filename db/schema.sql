@@ -291,8 +291,8 @@ DO $$ BEGIN
 END $$;
 
 -- Phase B5c also drops the old `is_public` column. Its two jobs (anonymous
--- read access, home-page directory listing) collapse into `anon_role` — see
--- the discussion in feedback_graphtask_auth_gotchas.md. Idempotent: existing
+-- read access, home-page directory listing) collapse into `anon_role`, the
+-- per-graph tier for people who hold only the URL. Idempotent: existing
 -- DBs lose the column on next boot; fresh DBs never had it.
 DO $$ BEGIN
   -- Drop the partial index first so the column drop succeeds.

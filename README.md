@@ -35,13 +35,14 @@ from a Claude Code agent regardless of which path you pick, see
 
 **<https://context.multitap.sh>** — no setup, no install.
 
-Open the link, click `+` to create a graph, start sketching tasks. Each
+Open the link, click **New Graph**, start sketching tasks. Each
 graph gets a 16-char random id (`/g/<id>`) that acts as the access
 token — share the URL to collaborate, rotate the id from the graph
 settings (`⋮` → Rotate) to revoke.
 
 The hosted instance runs with `AUTH_PROVIDER=clerk`, so the sidebar
-shows a sign-in button (email OTP). Anonymous use still works — you
+shows a sign-in button (email and password, with a verification code
+sent by email). Anonymous use still works — you
 just don't get owned-graph features (My graphs / Shared with me
 bucketing, member invitations, per-graph access tier). See
 [Authentication](#authentication) for what changes when you sign in.
@@ -211,7 +212,7 @@ same way here.
 | `AUTH_PROVIDER` | Required env | Behavior |
 |---|---|---|
 | `none` _(default)_ | — | No sign-in UI. Every graph id is a bearer token, exactly as before. |
-| `clerk` | `CLERK_SECRET_KEY`, `CLERK_PUBLISHABLE_KEY` | Browser loads Clerk JS for email-OTP sign-in. Graphs created by signed-in users get an `owner_user_id`, an `anon_role` tier (`none` / `viewer` / `editor`) for URL holders, and an explicit member list. |
+| `clerk` | `CLERK_SECRET_KEY`, `CLERK_PUBLISHABLE_KEY` | Browser loads Clerk JS for sign-in. Graphs created by signed-in users get an `owner_user_id`, an `anon_role` tier (`none` / `viewer` / `editor`) for URL holders, and an explicit member list. |
 
 **The access model, briefly.** With Clerk on, a graph has at most one owner who
 can add `viewer`/`editor` members by email, and every graph also carries an
@@ -231,11 +232,12 @@ deep dive](#sharing--access-model--deep-dive).
 
 1. Create a Clerk app at <https://dashboard.clerk.com> (use a separate
    app for dev vs. prod).
-2. Enable **Email address** as the sole sign-in identifier and **Email
-   verification code** (OTP) as the verification strategy. Multitap
-   doesn't wire up any other Clerk sign-in method — leaving them
-   enabled won't break anything, but they won't appear in the modal
-   either.
+2. Enable **Email address** as the sign-in identifier. Multitap opens
+   Clerk's own sign-in dialog and accepts the session it produces, so
+   the dialog offers whatever you turn on in the Clerk dashboard. The
+   hosted instance uses a password plus an **email verification
+   code**; email code alone also works. Other methods (social login,
+   SSO) have not been tried.
 3. Copy your **Publishable key** and **Secret key** from the Clerk
    dashboard into your `.env`:
    ```sh
@@ -1131,7 +1133,8 @@ small. Don't expect them to work:
 - No teams, orgs, or shared workspaces — sharing is per-graph, not per-group.
 - No commenter-only role — `viewer` is read-only, `editor` is full
   read/write. There's no third tier in between.
-- No SSO, social login, or magic links — email OTP only.
+- SSO, social login and magic links are untested — the hosted instance
+  signs in with email, a password and an emailed verification code.
 - No per-task ACL — the access tier is graph-wide.
 - No "claim this graph" flow for inheriting a legacy graph you didn't
   create locally — only graphs created while signed in are owned, and
