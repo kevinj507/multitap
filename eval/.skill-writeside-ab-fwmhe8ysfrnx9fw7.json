@@ -1,0 +1,94 @@
+{
+  "_comment": "E13.10 write-side skill A/B (#469). Screen=augment a degraded db-copy of stock; Confirm=blank-slate build from corpus. Builder=sonnet fixed, answerer=sonnet, judge=opus, tight maxNodes=10. N=2 builds/arm. ALL 4 changes KEEP both tracks.",
+  "method": {
+    "graph": "fwmhe8ysfrnx9fw7",
+    "degrade": "p=0.45 bridge-biased (seeds 42,43)",
+    "changes": [
+      "1 author connective tissue/bridges",
+      "2 name neighbors in body",
+      "3 genuine semantic link (selectivity)",
+      "4 truth-not-retriever (anti-hairball)"
+    ]
+  },
+  "screen": {
+    "s-baseline": {
+      "covN10": 0.56,
+      "covN30": 0.858,
+      "precN10": 0.342,
+      "bridgeReach": 0.863,
+      "relEdges": 279,
+      "edgeDensity": 3.771,
+      "aq_strict": 0,
+      "aq_lenient": 0.5
+    },
+    "s-c1": {
+      "covN10": 0.534,
+      "covN30": 0.831,
+      "precN10": 0.329,
+      "bridgeReach": 0.909,
+      "relEdges": 291,
+      "edgeDensity": 3.88,
+      "aq_strict": 0.083,
+      "aq_lenient": 0.583
+    },
+    "s-c2": {
+      "covN10": 0.585,
+      "covN30": 0.839,
+      "precN10": 0.358,
+      "bridgeReach": 0.772,
+      "relEdges": 416.5,
+      "edgeDensity": 5.447,
+      "aq_strict": 0.083,
+      "aq_lenient": 0.75
+    },
+    "s-c3": {
+      "covN10": 0.575,
+      "covN30": 0.833,
+      "precN10": 0.35,
+      "bridgeReach": 0.863,
+      "relEdges": 246,
+      "edgeDensity": 3.303,
+      "aq_strict": 0,
+      "aq_lenient": 0.75
+    },
+    "s-c4": {
+      "covN10": 0.561,
+      "covN30": 0.833,
+      "precN10": 0.346,
+      "bridgeReach": 0.863,
+      "relEdges": 247,
+      "edgeDensity": 3.314,
+      "aq_strict": 0,
+      "aq_lenient": 0.75
+    }
+  },
+  "confirm": {
+    "cf-baseline": {
+      "nodesBuilt": 39,
+      "edgesBuilt": 140,
+      "bridgeNodes": 5.5,
+      "aq_strict": 0.167,
+      "aq_lenient": 0.875,
+      "insufficientRate": 0.208
+    },
+    "cf-survivors": {
+      "nodesBuilt": 35,
+      "edgesBuilt": 134,
+      "bridgeNodes": 3,
+      "aq_strict": 0.167,
+      "aq_lenient": 1,
+      "insufficientRate": 0.042
+    }
+  },
+  "verdict": {
+    "kept": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "dropped": [],
+    "screen": "all 4 KEEP; AQ lenient 0.50->0.75; density curbed 5.45->3.31 by c3/c4",
+    "confirm": "all 4 KEEP; AQ lenient 0.875->1.00 (zero incorrect); insufficient 0.208->0.042 (5x lower); leaner graphs"
+  }
+}

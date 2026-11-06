@@ -1,0 +1,14 @@
+node_modules
+tests
+vitest.config.js
+.git
+.env
+.wafer/
+eval
+design
+modal
+.github
+.githooks
+Dockerfile.standalone
+docker-compose.yml
+docker-entrypoint.sh

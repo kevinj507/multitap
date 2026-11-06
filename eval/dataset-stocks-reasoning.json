@@ -1,0 +1,34 @@
+{
+  "_comment": "REASONING-GAP eval set for the stock graph (fwmhe8ysfrnx9fw7), authored 2026-06-13 to test LLM query rewrite (E11 follow-up to the dense-leg-vs-reasoning finding on #436). These are queries whose LITERAL surface topic differs from the asker's intent — answering requires an inference step ('powered up' -> electricity -> utilities), which similarity retrieval (lexical OR dense) does not do. The frozen dataset-stocks.json is mostly direct/paraphrase queries that already pass; this set deliberately probes the gap. Grades 0-3 (3=dedicated node, 2=strongly relevant, 1=marginal). qrels are title+excerpt-anchored (lighter than #223's pooled assessment — appropriate for a prototype set, not a frozen baseline). `rewrites` are precomputed keyword-rich rewrites simulating what an LLM rewrite step would emit; eval/rewrite-ab.js scores retrieval with the raw query (off) vs the rewrite (on). Run: STOCK_GID=fwmhe8ysfrnx9fw7.",
+  "gid_default": "fwmhe8ysfrnx9fw7",
+  "queries": {
+    "r1": "which firms keep the AI server farms powered up",
+    "r2": "what stops a new AI data center from turning on",
+    "r3": "who benefits if AI needs far more electricity than planned",
+    "r4": "if one company could break the whole AI supply chain who is it",
+    "r5": "who makes money from the boring metal and wiring inside AI racks",
+    "r6": "what keeps a data center from overheating as the chips get hotter",
+    "r7": "companies that profit from AI's land and permit problem",
+    "r8": "who quietly profits when hyperscalers overspend on AI"
+  },
+  "qrels": {
+    "r1": { "30": 3, "78": 3, "162": 3, "63": 3, "52": 2, "53": 2, "49": 2, "156": 2, "50": 2, "51": 1, "29": 1, "77": 1 },
+    "r2": { "77": 3, "29": 3, "53": 3, "30": 3, "52": 2, "84": 2, "78": 2, "69": 1, "63": 1 },
+    "r3": { "63": 3, "78": 3, "162": 3, "30": 3, "52": 2, "53": 2, "50": 2, "51": 2, "156": 1, "68": 1 },
+    "r4": { "84": 3, "43": 2, "44": 2, "33": 2, "61": 2, "39": 1, "70": 1, "60": 1 },
+    "r5": { "155": 3, "159": 3, "160": 2, "49": 2, "156": 2, "60": 1, "157": 1 },
+    "r6": { "48": 3, "156": 1, "29": 1, "49": 1 },
+    "r7": { "77": 3, "47": 2, "29": 1, "78": 1 },
+    "r8": { "82": 3, "83": 2, "65": 2, "71": 2, "57": 1, "84": 1 }
+  },
+  "rewrites": {
+    "r1": "data center energy and power suppliers: electric utilities, independent power producers, grid and transformers, natural gas turbines, nuclear, power distribution",
+    "r2": "AI data center buildout binding constraints: siting permitting and water, high-voltage switchgear and transformers, grid power, gas turbines",
+    "r3": "beneficiaries of rising AI electricity demand: regulated utilities, independent and merchant power producers, natural gas turbines, nuclear and uranium, grid equipment",
+    "r4": "single points of failure and choke points in the AI supply chain: TSMC foundry, ASML EUV monopoly, raw material and specialty gas concentration",
+    "r5": "components and materials inside AI server racks: connectors, active electrical cables, power distribution, specialty alloys, electrical interconnect",
+    "r6": "data center cooling: liquid cooling and thermal management for AI servers",
+    "r7": "data center siting, permitting, land and water constraints, and data center REITs",
+    "r8": "circular AI spending and vendor financing: capital circle, neoclouds, sovereign wealth funding, announced vs deployed capacity"
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "name": "multitap",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "eval": "node eval/run-eval.js",
+    "start": "ulimit -Sn 65535 2>/dev/null || ulimit -Sn $(ulimit -Hn) 2>/dev/null || true; node --env-file=.env src/server.js"
+  },
+  "keywords": [],
+  "license": "ISC",
+  "dependencies": {
+    "@clerk/express": "^2.1.15",
+    "express": "^5.2.1",
+    "pg": "^8.20.0",
+    "yaml": "^2.8.3"
+  },
+  "devDependencies": {
+    "supertest": "^7.2.2",
+    "vitest": "^4.1.5"
+  },
+  "optionalDependencies": {
+    "@huggingface/transformers": "^4.2.0"
+  },
+  "overrides": {
+    "rolldown": "1.2.3",
+    "nanoid": "3.3.18",
+    "postcss": "8.5.25",
+    "vite": "8.2.0",
+    "@clerk/shared": "4.26.0",
+    "body-parser": {
+      "content-type": "2.0.0"
+    },
+    "type-is": {
+      "content-type": "2.0.0"
+    }
+  }
+}

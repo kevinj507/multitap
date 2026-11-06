@@ -1,0 +1,208 @@
+{
+  "meta": {
+    "gid": "fwmhe8ysfrnx9fw7",
+    "base": "http://127.0.0.1:3000",
+    "related_edges": 255,
+    "seedN": 3,
+    "hops": 2,
+    "repeats": 30,
+    "n_cases": 12,
+    "bridge_gold_total": 11,
+    "near_gold_total": 64
+  },
+  "curve": [
+    {
+      "p": 0,
+      "edges_kept": 255,
+      "gold_reach": 1,
+      "bridge_gold_reach": 1,
+      "near_gold_reach": 1
+    },
+    {
+      "p": 0.1,
+      "edges_kept": 230,
+      "gold_reach": 0.991,
+      "bridge_gold_reach": 0.948,
+      "near_gold_reach": 0.998
+    },
+    {
+      "p": 0.2,
+      "edges_kept": 204,
+      "gold_reach": 0.972,
+      "bridge_gold_reach": 0.836,
+      "near_gold_reach": 0.995
+    },
+    {
+      "p": 0.3,
+      "edges_kept": 179,
+      "gold_reach": 0.949,
+      "bridge_gold_reach": 0.782,
+      "near_gold_reach": 0.978
+    },
+    {
+      "p": 0.4,
+      "edges_kept": 153,
+      "gold_reach": 0.911,
+      "bridge_gold_reach": 0.655,
+      "near_gold_reach": 0.955
+    },
+    {
+      "p": 0.5,
+      "edges_kept": 128,
+      "gold_reach": 0.841,
+      "bridge_gold_reach": 0.473,
+      "near_gold_reach": 0.905
+    },
+    {
+      "p": 0.6,
+      "edges_kept": 102,
+      "gold_reach": 0.748,
+      "bridge_gold_reach": 0.364,
+      "near_gold_reach": 0.814
+    },
+    {
+      "p": 0.7,
+      "edges_kept": 77,
+      "gold_reach": 0.652,
+      "bridge_gold_reach": 0.261,
+      "near_gold_reach": 0.719
+    },
+    {
+      "p": 0.8,
+      "edges_kept": 51,
+      "gold_reach": 0.506,
+      "bridge_gold_reach": 0.085,
+      "near_gold_reach": 0.578
+    },
+    {
+      "p": 0.9,
+      "edges_kept": 25,
+      "gold_reach": 0.376,
+      "bridge_gold_reach": 0.03,
+      "near_gold_reach": 0.435
+    }
+  ],
+  "perCase": [
+    {
+      "id": "mh1",
+      "seeds": [
+        84,
+        53,
+        83
+      ],
+      "n_near": 3,
+      "n_bridge": 3
+    },
+    {
+      "id": "mh2",
+      "seeds": [
+        164,
+        154,
+        44
+      ],
+      "n_near": 4,
+      "n_bridge": 1
+    },
+    {
+      "id": "mh3",
+      "seeds": [
+        84,
+        34,
+        82
+      ],
+      "n_near": 8,
+      "n_bridge": 0
+    },
+    {
+      "id": "mh4",
+      "seeds": [
+        48,
+        164,
+        154
+      ],
+      "n_near": 6,
+      "n_bridge": 0
+    },
+    {
+      "id": "mh5",
+      "seeds": [
+        51,
+        68,
+        77
+      ],
+      "n_near": 6,
+      "n_bridge": 0
+    },
+    {
+      "id": "mh6",
+      "seeds": [
+        41,
+        39,
+        27
+      ],
+      "n_near": 4,
+      "n_bridge": 3
+    },
+    {
+      "id": "mh7",
+      "seeds": [
+        31,
+        56,
+        158
+      ],
+      "n_near": 7,
+      "n_bridge": 0
+    },
+    {
+      "id": "mh8",
+      "seeds": [
+        62,
+        79,
+        84
+      ],
+      "n_near": 7,
+      "n_bridge": 0
+    },
+    {
+      "id": "mh9",
+      "seeds": [
+        59,
+        66,
+        81
+      ],
+      "n_near": 4,
+      "n_bridge": 4
+    },
+    {
+      "id": "mh10",
+      "seeds": [
+        32,
+        58,
+        50
+      ],
+      "n_near": 6,
+      "n_bridge": 0
+    },
+    {
+      "id": "mh11",
+      "seeds": [
+        34,
+        51,
+        68
+      ],
+      "n_near": 4,
+      "n_bridge": 0
+    },
+    {
+      "id": "mh12",
+      "seeds": [
+        154,
+        156,
+        164
+      ],
+      "n_near": 5,
+      "n_bridge": 0
+    }
+  ],
+  "_comment": "E13 edge-ablation (#464 follow-up, write-time-structure question, 2026-06-21). Non-destructive client-side ablation (does NOT mutate the shared live data graph): remove fraction p of related edges, measure GOLD REACHABILITY@hops2 from top-3 SEARCH seeds = ceiling on context-pack coverage. RESULT: connectedness CAUSALLY enables multi-hop retrieval. Gold reachability falls monotonically with edge removal (1.0 -> 0.38 at 90% removed). KEY: BRIDGE gold (>=2 hops from seed, the multi-hop payload) degrades 5-10x FASTER than NEAR gold (<=1 hop, which search-only also gets): at 40% removed bridge=0.66 vs near=0.96; at 50% bridge=0.47 vs near=0.91; at 80% bridge=0.09 vs near=0.58. So the related edges are exactly what make the bridge nodes reachable -> the entire context-pack multi-hop advantage is downstream of write-time edge quality. NUANCE: graceful at low ablation (10% removed -> bridge still 0.95) = redundant connectivity; you do not need every edge, you need the BRIDGE edges (cross-region links). Skill guidance: author the connective tissue (bridge nodes + cross-cluster related edges), for FIDELITY; do not over-connect."
+}

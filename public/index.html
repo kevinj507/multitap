@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Multitap</title>
+  <meta name="description" content="Knowledge graph you can use with hotkeys and with your AI agent">
+  <link rel="canonical" href="https://context.multitap.sh">
+  <link rel="icon" type="image/png" href="https://static.thenounproject.com/png/317687-200.png">
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Multitap">
+  <meta property="og:title" content="Multitap">
+  <meta property="og:description" content="Knowledge graph you can use with hotkeys and with your AI agent">
+  <meta property="og:url" content="https://context.multitap.sh">
+  <meta property="og:image" content="https://context.multitap.sh/splash.png">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Multitap">
+  <meta name="twitter:description" content="Knowledge graph you can use with hotkeys and with your AI agent">
+  <meta name="twitter:image" content="https://context.multitap.sh/splash.png">
+
+  <link rel="stylesheet" href="https://uicdn.toast.com/editor/latest/toastui-editor.min.css">
+  <link rel="stylesheet" href="https://uicdn.toast.com/editor/latest/theme/toastui-editor-dark.min.css">
+  <!-- Design-system typefaces (Playfair Display / Nunito / DM Sans / Inter)
+       plus the two extra picker choices (EB Garamond / Roboto). All loaded
+       from Google Fonts; style.css declares local fallbacks per the
+       --font-* tokens so the page still renders if Google Fonts is blocked. -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=EB+Garamond:wght@400;500&family=Inter:wght@400;500;600&family=Nunito:wght@600&family=Playfair+Display:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <aside id="sidebar">
+    <div id="sidebar-header">
+      <button id="sidebar-new-btn" class="sb-new-btn" title="Create a new graph">New Graph</button>
+      <!-- Reader-mode toggle (E16.3). Client-only view flip between the graph
+           canvas and the report reader; both glyphs live in the DOM and CSS
+           shows whichever matches body.view-reader (same two-glyph pattern as
+           #presence-eye — a single-<i> pure-CSS Phosphor swap won't work). -->
+      <button id="sidebar-reader-btn" class="sb-icon-btn" title="Reader mode" aria-label="Toggle reader mode" aria-pressed="false">
+        <i class="ph ph-book reader-icon-closed" aria-hidden="true"></i>
+        <i class="ph ph-book-open reader-icon-open" aria-hidden="true"></i>
+      </button>
+      <button id="sidebar-collapse-btn" class="sb-icon-btn" title="Collapse sidebar" aria-label="Collapse sidebar">
+        <i class="ph ph-arrow-line-left" aria-hidden="true"></i>
+      </button>
+    </div>
+    <button id="sidebar-expand-btn" class="sb-icon-btn sb-collapsed-only" title="Expand sidebar" aria-label="Expand sidebar">
+      <i class="ph ph-arrow-line-right" aria-hidden="true"></i>
+    </button>
+    <button id="sidebar-new-btn-collapsed" class="sb-icon-btn sb-collapsed-only" title="Create a new graph" aria-label="Create a new graph">+</button>
+    <!-- Reader toggle stays reachable when the header hides on collapse. -->
+    <button id="sidebar-reader-btn-collapsed" class="sb-icon-btn sb-collapsed-only" title="Reader mode" aria-label="Toggle reader mode" aria-pressed="false">
+      <i class="ph ph-book reader-icon-closed" aria-hidden="true"></i>
+      <i class="ph ph-book-open reader-icon-open" aria-hidden="true"></i>
+    </button>
+    <div id="sidebar-list"></div>
+    <!-- Reader-mode left rail (E16.5): in reader mode the graph list is swapped
+         for a cross-graph report browser — one row per graph (owned + member)
+         that has a report. CSS gates the swap off body.view-reader. Rendered by
+         renderReaderList(); rows load a report into the Viewer without
+         repointing the active graph. -->
+    <div id="reader-list"></div>
+    <div id="sidebar-empty" class="hidden">
+      <p>No graphs yet</p>
+    </div>
+    <div id="sidebar-bottom">
+      <a id="docs-link" class="sb-bottom-btn" href="https://github.com/kevinj507/multitap" target="_blank" rel="noopener noreferrer" title="Documentation" aria-label="Documentation">
+        <i class="ph ph-info" aria-hidden="true"></i>
+        <span class="sb-bottom-label">Documentation</span>
+      </a>
+      <!-- Auth chrome (Phase B). Populated by app.js after /api/config tells us
+           whether auth is enabled; empty when AUTH_PROVIDER=none so the sidebar
+           looks identical to Phase A. -->
+      <div id="sidebar-auth"></div>
+      <button id="app-settings-btn" class="sb-bottom-btn" title="App-level Defaults" aria-label="Settings">
+        <i class="ph ph-gear" aria-hidden="true"></i>
+        <span class="sb-bottom-label">Settings</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Read-only banner (Phase B5f). Shown when the viewer has read access
+       but not edit access (anon on public graph, anon-via-invite viewer cookie,
+       etc.). Hidden by default; toggled by applyReadOnlyState() in app.js. -->
+  <div id="readonly-banner" class="readonly-banner hidden">
+    <span>Read-only</span>
+    <button type="button" id="readonly-signin-btn" class="readonly-signin-btn hidden">Sign in to edit</button>
+    <button type="button" id="readonly-dismiss-btn" class="readonly-dismiss-btn" title="Dismiss for this tab" aria-label="Dismiss read-only banner">Dismiss</button>
+  </div>
+
+  <div id="cy"></div>
+
+  <!-- Kanban view container. Same canvas region as #cy; applyView() toggles
+       which is visible based on the per-graph view preference. Four fixed
+       columns grouped by status. -->
+  <div id="kanban" class="hidden">
+    <div class="kb-column" data-status="todo">
+      <div class="kb-column-header">
+        <span class="kb-column-title">Todo</span>
+        <span class="kb-column-count" id="kb-count-todo">0</span>
+        <button type="button" class="kb-column-add" data-status="todo" title="New todo task" aria-label="New todo task">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M8 3v10M3 8h10"/></svg>
+        </button>
+      </div>
+      <div class="kb-column-cards" id="kb-cards-todo"></div>
+    </div>
+    <div class="kb-column" data-status="in_progress">
+      <div class="kb-column-header">
+        <span class="kb-column-title">In Progress</span>
+        <span class="kb-column-count" id="kb-count-in_progress">0</span>
+        <button type="button" class="kb-column-add" data-status="in_progress" title="New in-progress task" aria-label="New in-progress task">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M8 3v10M3 8h10"/></svg>
+        </button>
+      </div>
+      <div class="kb-column-cards" id="kb-cards-in_progress"></div>
+    </div>
+    <div class="kb-column" data-status="review">
+      <div class="kb-column-header">
+        <span class="kb-column-title">Review</span>
+        <span class="kb-column-count" id="kb-count-review">0</span>
+        <button type="button" class="kb-column-add" data-status="review" title="New review task" aria-label="New review task">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M8 3v10M3 8h10"/></svg>
+        </button>
+      </div>
+      <div class="kb-column-cards" id="kb-cards-review"></div>
+    </div>
+    <div class="kb-column" data-status="done">
+      <div class="kb-column-header">
+        <span class="kb-column-title">Done</span>
+        <span class="kb-column-count" id="kb-count-done">0</span>
+        <button type="button" class="kb-column-add" data-status="done" title="New done task" aria-label="New done task">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M8 3v10M3 8h10"/></svg>
+        </button>
+      </div>
+      <div class="kb-column-cards" id="kb-cards-done"></div>
+    </div>
+  </div>
+
+  <!-- Reader view container (E16.3). Same canvas region as #cy/#kanban;
+       applyView() toggles which is visible. Client-only: rendering a report
+       here performs zero writes to the graph. The body is rendered through a
+       Toast UI Viewer (built-in sanitizer) — never via innerHTML. -->
+  <div id="reader" class="hidden">
+    <!-- Auto Contents rail (E16.17): built from the rendered report's h2–h4,
+         with scroll-spy. Sits in the left margin; hidden on narrow viewports
+         and when a report has fewer than two headings. Client-only. -->
+    <nav id="reader-toc" class="hidden" aria-label="Report contents"></nav>
+    <div id="reader-article">
+      <div id="reader-report-header" class="hidden">
+        <h1 id="reader-title"></h1>
+        <p id="reader-desc"></p>
+        <div id="reader-meta"></div>
+      </div>
+      <!-- Staleness banner (E16.6): shown only when the graph changed after the
+           report was generated. Plain text, client-computed from the rail row's
+           graph_updated_at vs the report's generated_at — no extra fetch. -->
+      <div id="reader-stale-banner" class="hidden"></div>
+      <div id="reader-body"></div>
+      <!-- Numbered footnote list (E16 citations), built from the [[cite:<id>]]
+           markers in the report — one entry per cited node, click-through. -->
+      <section id="reader-references" class="hidden"></section>
+      <div id="reader-empty" class="hidden">
+        <p>No report yet — ask your agent to generate one.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Multi-peer presence: labeled cursors anchored to nodes/edges that
+       remote peers have selected or are editing. Sits above the canvas
+       (z-index 15) but below modals (20). pointer-events: none so it
+       never blocks taps. JS positions each cursor via a small
+       force-directed simulation. -->
+  <div id="peer-cursor-layer"></div>
+
+  <!-- Agent-follow push button. Hidden until at least one agent is
+       active on the graph. Layered like a real-world push-button on a
+       plate: outer plate → dark recessed well → cream-colored collar
+       around the cap → orange cap. Pressed (.is-tracking) sinks the cap
+       into the collar and runs a faint orange pulse in the cream ring.
+       Released = follow paused. -->
+  <button type="button" id="btn-follow-toggle"
+          class="push-button is-tracking hidden"
+          data-tooltip="Stop tracking"
+          aria-label="Toggle agent tracking"
+          aria-pressed="true">
+    <span class="push-button-status">Live</span>
+    <span class="push-button-collar" aria-hidden="true">
+      <span class="push-button-cap"></span>
+    </span>
+  </button>
+
+  <!-- Hide-presence toggle. Tiny icon in the very top-right corner. Fades
+       in on hover over the presence bar / push button / itself. Click to
+       hide both presence-bar and push-button; eye stays visible (faded)
+       so the user can un-hide. State persisted in localStorage. -->
+  <button type="button" id="presence-eye" class="presence-eye"
+          aria-label="Hide collaborators" title="Hide collaborators">
+    <!-- Both icons sit in the DOM; CSS shows whichever matches the
+         current (hidden + hover) state. Hover previews the opposite
+         state to signal what a click will do. -->
+    <i class="ph ph-eye eye-icon-open" aria-hidden="true"></i>
+    <i class="ph ph-eye-closed eye-icon-closed" aria-hidden="true"></i>
+  </button>
+
+  <div id="panel" class="panel hidden">
+    <div id="panel-resize-handle"></div>
+    <div class="panel-header">
+      <h2 id="panel-title">New Task</h2>
+      <span id="save-status" class="save-status" aria-live="polite"></span>
+      <button id="panel-close">&times;</button>
+    </div>
+    <form id="task-form">
+      <label>Title
+        <input type="text" id="field-title" maxlength="100" placeholder="Task title" required>
+      </label>
+      <label>Status
+        <select id="field-status">
+          <option value="todo">Todo</option>
+          <option value="in_progress">In progress</option>
+          <option value="review">Review</option>
+          <option value="done">Done</option>
+        </select>
+      </label>
+      <div class="bg-image-row hidden" id="bg-image-row">
+        <span class="bg-image-label">Background image</span>
+        <div class="bg-image-field" id="bg-image-field" tabindex="0" role="button" aria-label="Set background image">
+          <i class="ph ph-upload-simple bg-image-field-icon" id="bg-image-field-icon" aria-hidden="true"></i>
+          <span class="bg-image-field-text placeholder" id="bg-image-field-text">Click or drag image here</span>
+          <button type="button" class="bg-image-clear hidden" id="bg-image-clear" aria-label="Remove image">×</button>
+        </div>
+        <input type="file" id="bg-image-input" accept="image/*" class="bg-image-file-input">
+      </div>
+      <div class="body-section">
+        <div class="body-section-header">
+          <span class="body-label">Body</span>
+          <div class="mode-toggle" role="tablist">
+            <button type="button" id="mode-rich" class="mode-btn active" role="tab" aria-selected="true">Rich</button>
+            <button type="button" id="mode-raw" class="mode-btn" role="tab" aria-selected="false">Markdown</button>
+          </div>
+        </div>
+        <div id="rich-editor"></div>
+        <textarea id="raw-editor" class="hidden" placeholder="# Heading
+
+- bullet
+- bullet
+
+1. numbered
+2. numbered"></textarea>
+      </div>
+    </form>
+    <!-- Panel footer with destructive action. Only visible when editing an
+         existing task (editingTaskId != null); hidden for the brand-new
+         "title still empty, never saved" state. -->
+    <div class="panel-footer">
+      <button type="button" id="panel-delete" class="panel-delete-btn" title="Delete this task">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><polyline points="3,4 13,4"/><path d="M5 4v9a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1V4"/><path d="M6 4V2.5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1V4"/></svg>
+        <span>Delete</span>
+      </button>
+    </div>
+  </div>
+
+  <div id="graph-modal" class="modal hidden">
+    <div class="modal-content modal-content-form">
+      <div id="graph-modal-created" class="modal-subtitle"></div>
+      <h3 id="graph-modal-name" class="editable-heading" contenteditable="true" spellcheck="false" data-placeholder="Untitled"></h3>
+      <div id="graph-modal-name-error" class="modal-error hidden"></div>
+
+      <label class="modal-field modal-field-flush">
+        <textarea id="graph-modal-desc" maxlength="500" rows="3" placeholder="Description (optional)"></textarea>
+      </label>
+
+      <div class="modal-field modal-field-flush">
+        <div class="share-row">
+          <input type="text" id="graph-modal-url" readonly>
+          <button id="graph-modal-copy" type="button" title="Copy URL" aria-label="Copy URL"><i class="ph ph-copy"></i></button>
+          <button id="graph-modal-rotate" type="button" title="Rotate URL — invalidates the current link" aria-label="Rotate URL"><i class="ph ph-arrows-clockwise"></i></button>
+        </div>
+      </div>
+
+      <!-- Access (Phase B5c). Inline replacement for the old Private/Public
+           toggle. Hidden for legacy graphs (URL = full access) and shown for
+           owned graphs where the viewer can manage.
+
+           Layout: Mode picker first (font-picker style, three options).
+           Email + role + Add and the members list are only revealed when
+           Mode = "Invited members only" (anon_role='none'). -->
+      <div class="modal-field modal-field-access hidden" id="graph-modal-access">
+        <span>Access</span>
+        <div class="access-controls">
+
+          <!-- Mode picker — replaces the old <select> with the font-picker
+               custom button + popup pattern so it matches the rest of the
+               modal's typography. -->
+          <div class="access-row">
+            <span class="access-row-label">Mode</span>
+            <div class="font-picker access-picker" id="graph-modal-anon-picker">
+              <button type="button" class="font-picker-trigger" aria-haspopup="listbox" aria-expanded="false">
+                <span class="font-picker-value" id="graph-modal-anon-label">Anyone with invite can view</span>
+                <span class="font-picker-caret" aria-hidden="true">
+                  <svg viewBox="0 0 12 12" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 5 6 8 9 5"/></svg>
+                </span>
+              </button>
+              <div class="font-picker-menu hidden" role="listbox">
+                <button type="button" class="font-picker-option" role="option" data-value="viewer">Anyone with invite can view</button>
+                <button type="button" class="font-picker-option" role="option" data-value="editor">Anyone with invite can edit</button>
+                <button type="button" class="font-picker-option" role="option" data-value="none">Invited members only</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Members section — only visible when Mode = Invited members only. -->
+          <div id="graph-modal-members-section" class="access-members-section hidden">
+            <div class="access-invite-row">
+              <input type="email" id="graph-modal-invite-email" placeholder="email address" autocomplete="off" spellcheck="false">
+              <div class="font-picker access-picker-inline" id="graph-modal-invite-role-picker">
+                <button type="button" class="font-picker-trigger" aria-haspopup="listbox" aria-expanded="false">
+                  <span class="font-picker-value" id="graph-modal-invite-role-label">Editor</span>
+                  <span class="font-picker-caret" aria-hidden="true">
+                    <svg viewBox="0 0 12 12" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 5 6 8 9 5"/></svg>
+                  </span>
+                </button>
+                <div class="font-picker-menu hidden" role="listbox">
+                  <button type="button" class="font-picker-option" role="option" data-value="editor">Editor</button>
+                  <button type="button" class="font-picker-option" role="option" data-value="viewer">Viewer</button>
+                </div>
+              </div>
+              <button id="graph-modal-invite-submit" type="button" class="invite-send-btn" aria-label="Send invitation" title="Send invitation">
+                <i class="ph ph-paper-plane-tilt" aria-hidden="true"></i>
+              </button>
+            </div>
+            <p id="graph-modal-invite-error" class="modal-error hidden"></p>
+            <div id="graph-modal-members-list" class="access-members-list hidden"></div>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="modal-field">
+        <span>Appearance</span>
+        <div class="appearance-grid">
+          <div class="appearance-row">
+            <span class="appearance-label">View</span>
+            <div class="font-picker" id="graph-modal-view">
+              <button type="button" class="font-picker-trigger" aria-haspopup="listbox" aria-expanded="false">
+                <span class="font-picker-value">Graph</span>
+                <span class="font-picker-caret" aria-hidden="true">
+                  <svg viewBox="0 0 12 12" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 5 6 8 9 5"/></svg>
+                </span>
+              </button>
+              <div class="font-picker-menu hidden" role="listbox">
+                <button type="button" class="font-picker-option" role="option" data-value="graph">Graph</button>
+                <button type="button" class="font-picker-option" role="option" data-value="kanban">Kanban</button>
+              </div>
+            </div>
+          </div>
+          <div class="appearance-row">
+            <span class="appearance-label">Font</span>
+            <div class="font-picker" id="graph-modal-font">
+              <button type="button" class="font-picker-trigger" aria-haspopup="listbox" aria-expanded="false">
+                <span class="font-picker-value">Default</span>
+                <span class="font-picker-caret" aria-hidden="true">
+                  <svg viewBox="0 0 12 12" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 5 6 8 9 5"/></svg>
+                </span>
+              </button>
+              <div class="font-picker-menu hidden" role="listbox">
+                <button type="button" class="font-picker-option" role="option" data-value="">Default</button>
+                <button type="button" class="font-picker-option" role="option" data-value="inter" style="font-family: 'Inter', sans-serif;">Inter</button>
+                <button type="button" class="font-picker-option" role="option" data-value="garamond" style="font-family: 'EB Garamond', Garamond, serif;">EB Garamond</button>
+                <button type="button" class="font-picker-option" role="option" data-value="roboto" style="font-family: 'Roboto', sans-serif;">Roboto</button>
+              </div>
+            </div>
+          </div>
+          <div class="appearance-color-row">
+            <div class="appearance-color-group">
+              <span class="appearance-label">Text</span>
+              <div class="appearance-swatches" id="graph-modal-font-swatches"></div>
+            </div>
+            <div class="appearance-color-group">
+              <span class="appearance-label">Background</span>
+              <div class="appearance-swatches" id="graph-modal-bg-swatches"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-actions modal-actions-center">
+        <button id="graph-modal-delete" class="danger" type="button">Delete</button>
+        <button id="graph-modal-save" class="primary" type="button">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="private-warn-modal" class="modal hidden">
+    <div class="modal-content modal-content-form">
+      <h3>Graphs are private by default</h3>
+      <p class="modal-body-text">Save the link somewhere, or change to public.</p>
+      <label class="suppress-row">
+        <input type="checkbox" id="private-warn-suppress">
+        <span>Never show again</span>
+      </label>
+      <div class="modal-actions modal-actions-center">
+        <button id="private-warn-dismiss" type="button">Dismiss</button>
+        <button id="private-warn-settings" class="primary" type="button">Settings</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="delete-modal" class="modal hidden">
+    <div class="modal-content">
+      <h3 id="delete-modal-title">Confirm delete</h3>
+      <p id="delete-modal-desc"></p>
+      <div class="modal-actions modal-actions-center">
+        <button id="delete-cancel">Cancel</button>
+        <button id="delete-confirm" class="danger">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="new-graph-modal" class="modal hidden">
+    <div class="modal-content modal-content-form">
+      <h3>New graph</h3>
+      <label class="modal-field modal-field-flush">
+        <input type="text" id="new-graph-name" maxlength="80" autocomplete="off" spellcheck="false" placeholder="Name">
+      </label>
+      <p id="new-graph-error" class="modal-error hidden"></p>
+      <div class="modal-actions modal-actions-center">
+        <button id="new-graph-cancel" type="button">Cancel</button>
+        <button id="new-graph-create" class="primary" type="button">Create</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="bottom-bar">
+    <div id="tb-neutral" class="tb-slot">
+      <span class="tb-count" id="tb-neutral-count">0</span>
+      <div class="tb-divider"></div>
+      <button id="btn-new-node" class="tool-btn" title="New node">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="12" height="10" rx="1.5"/><path d="M8 6v4M6 8h4"/></svg>
+        <span>New</span>
+        <kbd>G</kbd>
+      </button>
+      <div class="tb-divider"></div>
+      <button id="btn-zoom-fit" class="tool-btn" title="Zoom to Fit">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="12" height="12" rx="1"/><polyline points="6,2 6,6 2,6"/><polyline points="10,14 10,10 14,10"/></svg>
+        <span>Fit</span>
+        <kbd>F</kbd>
+      </button>
+      <div class="tb-divider"></div>
+      <button id="btn-tidy" class="tool-btn" title="Re-layout tightly and fit (overrides manual node positions)">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="4" cy="4" r="1.5"/><circle cx="12" cy="4" r="1.5"/><circle cx="8" cy="11" r="1.5"/><line x1="4" y1="5.5" x2="8" y2="9.5"/><line x1="12" y1="5.5" x2="8" y2="9.5"/></svg>
+        <span>Tidy</span>
+        <kbd>T</kbd>
+      </button>
+      <div class="tb-divider"></div>
+      <button id="btn-settings" class="tool-btn" title="Settings">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="2.2"/><path d="M8 1.2v1.6M8 13.2v1.6M2.2 8h1.6M12.2 8h1.6M3.7 3.7l1.1 1.1M11.2 11.2l1.1 1.1M3.7 12.3l1.1-1.1M11.2 4.8l1.1-1.1"/></svg>
+        <span>Settings</span>
+        <kbd>⌘K</kbd>
+      </button>
+    </div>
+
+    <div id="tb-mixed" class="tb-slot hidden">
+      <span class="tb-count" id="tb-mixed-count"></span>
+      <div class="tb-divider"></div>
+      <button id="btn-color-selection" class="tool-btn" title="Change background color">
+        <svg width="16" height="16" viewBox="0 0 256 256" fill="none" stroke="currentColor" stroke-width="16" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M128 24a104 104 0 0 0 0 208h10a22 22 0 0 0 0-44h-6a18 18 0 0 1 0-36h22a64 64 0 0 0 0-128z"/><circle cx="80" cy="96" r="10" fill="currentColor" stroke="none"/><circle cx="112" cy="64" r="10" fill="currentColor" stroke="none"/><circle cx="152" cy="68" r="10" fill="currentColor" stroke="none"/><circle cx="76" cy="136" r="10" fill="currentColor" stroke="none"/></svg>
+        <span>Color</span>
+        <kbd>B</kbd>
+      </button>
+      <div class="tb-divider"></div>
+      <button id="btn-delete-selection" class="tool-btn" title="Delete selection">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="3,4 13,4"/><path d="M5 4v9a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1V4"/><path d="M6 4V2.5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1V4"/></svg>
+        <span>Delete</span>
+        <kbd>⌫</kbd>
+      </button>
+    </div>
+
+    <div id="tb-node" class="tb-slot hidden">
+      <span class="tb-count" id="tb-node-count"></span>
+      <div class="tb-divider"></div>
+      <button id="btn-status" class="tool-btn" title="Change status">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="5.5"/><polyline points="5.5,8 7.2,9.7 10.5,6.3"/></svg>
+        <span id="tb-node-status-label">Status</span>
+        <kbd>S</kbd>
+      </button>
+      <div class="tb-divider"></div>
+      <button id="btn-color-node" class="tool-btn" title="Change background color">
+        <svg width="16" height="16" viewBox="0 0 256 256" fill="none" stroke="currentColor" stroke-width="16" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M128 24a104 104 0 0 0 0 208h10a22 22 0 0 0 0-44h-6a18 18 0 0 1 0-36h22a64 64 0 0 0 0-128z"/><circle cx="80" cy="96" r="10" fill="currentColor" stroke="none"/><circle cx="112" cy="64" r="10" fill="currentColor" stroke="none"/><circle cx="152" cy="68" r="10" fill="currentColor" stroke="none"/><circle cx="76" cy="136" r="10" fill="currentColor" stroke="none"/></svg>
+        <span>Color</span>
+        <kbd>B</kbd>
+      </button>
+      <div class="tb-divider"></div>
+      <button id="btn-connect" class="tool-btn" title="Connect to another node">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="3.5" cy="8" r="2"/><circle cx="12.5" cy="8" r="2"/><path d="M5.5 8h5"/><path d="M9 6.5 10.5 8 9 9.5"/></svg>
+        <span>Connect</span>
+        <kbd>E</kbd>
+      </button>
+      <div class="tb-divider"></div>
+      <button id="btn-delete-node" class="tool-btn" title="Delete">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="3,4 13,4"/><path d="M5 4v9a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1V4"/><path d="M6 4V2.5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1V4"/></svg>
+        <span>Delete</span>
+        <kbd>⌫</kbd>
+      </button>
+    </div>
+
+    <div id="tb-edge-creating" class="tb-slot hidden">
+      <span class="tb-count" id="tb-edge-creating-count"></span>
+      <div class="tb-divider"></div>
+      <span class="tb-direction" id="tb-edge-creating-preview"></span>
+      <div class="tb-divider"></div>
+      <span class="tb-direction-controls" id="tb-edge-creating-controls">
+        <span id="tb-edge-creating-direction-icon" class="tb-direction-icon" aria-hidden="true"></span>
+        <span>Direction</span>
+        <kbd>E</kbd>
+      </span>
+      <div class="tb-divider"></div>
+      <span class="tb-hint"><span>Cancel</span><kbd>Esc</kbd></span>
+    </div>
+
+    <div id="tb-edge" class="tb-slot hidden">
+      <span class="tb-direction" id="tb-edge-direction"></span>
+      <div class="tb-divider"></div>
+      <button id="btn-color-edge" class="tool-btn" title="Change line color">
+        <svg width="16" height="16" viewBox="0 0 256 256" fill="none" stroke="currentColor" stroke-width="16" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M128 24a104 104 0 0 0 0 208h10a22 22 0 0 0 0-44h-6a18 18 0 0 1 0-36h22a64 64 0 0 0 0-128z"/><circle cx="80" cy="96" r="10" fill="currentColor" stroke="none"/><circle cx="112" cy="64" r="10" fill="currentColor" stroke="none"/><circle cx="152" cy="68" r="10" fill="currentColor" stroke="none"/><circle cx="76" cy="136" r="10" fill="currentColor" stroke="none"/></svg>
+        <span>Color</span>
+        <kbd>C</kbd>
+      </button>
+      <div class="tb-divider"></div>
+      <button id="btn-direction-edge" class="tool-btn" title="Change direction">
+        <span id="tb-edge-direction-icon" class="tb-direction-icon" aria-hidden="true"></span>
+        <span>Direction</span>
+        <kbd>D</kbd>
+      </button>
+      <div class="tb-divider"></div>
+      <button id="btn-delete-edge" class="tool-btn" title="Delete">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="3,4 13,4"/><path d="M5 4v9a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1V4"/><path d="M6 4V2.5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1V4"/></svg>
+        <span>Delete</span>
+        <kbd>⌫</kbd>
+      </button>
+    </div>
+
+    <!-- Kanban: one-or-more card selection. Shown by updateKanbanToolbar
+         when at least one .kb-card.selected exists; hides tb-neutral
+         while it's visible. Cmd-click on cards adds to selection. -->
+    <div id="tb-kanban-selection" class="tb-slot hidden">
+      <span class="tb-count" id="tb-kanban-selection-count">0</span>
+      <div class="tb-divider"></div>
+      <button id="btn-kanban-delete" class="tool-btn" title="Delete selected cards">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="3,4 13,4"/><path d="M5 4v9a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1V4"/><path d="M6 4V2.5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1V4"/></svg>
+        <span>Delete</span>
+        <kbd>⌫</kbd>
+      </button>
+    </div>
+  </div>
+
+  <div id="node-title-overlay" class="hidden" contenteditable="true" spellcheck="false" data-placeholder="Untitled"></div>
+  <div id="edge-curve-handle" class="hidden" title="Drag to curve edge"></div>
+  <div id="color-palette" class="color-palette hidden" role="dialog" aria-label="Color picker">
+    <div class="color-palette-header">
+      <span class="color-palette-title" id="color-palette-title">Color</span>
+    </div>
+    <div class="color-palette-grid" id="color-palette-grid" role="listbox"></div>
+  </div>
+
+  <div id="settings-overlay" class="settings-overlay hidden" role="dialog" aria-label="Defaults">
+    <div class="settings-card">
+      <div class="settings-heading">
+        <h3>Defaults</h3>
+        <p>For new graphs. Override in graph settings.</p>
+      </div>
+      <input id="settings-search" class="settings-search" type="text" placeholder="Type / to search" autocomplete="off" spellcheck="false">
+      <div id="settings-results" class="settings-results"></div>
+    </div>
+  </div>
+
+  <div id="cmd-box" class="cmd-box hidden"></div>
+
+  <!-- Find / search bar (Cmd/Ctrl+F). The front door to KB search (graph
+       tasks #171/#172). Phase 1 ships Tier-0 lexical "this graph" search,
+       client-side over the loaded task bodies. Intercepts the native find
+       (which returns 0/0 over the Cytoscape canvas). Enter runs the search;
+       up/down walk results; selecting centers the node on the canvas. -->
+  <div id="search-bar" class="search-bar hidden" role="search">
+    <div class="search-row">
+      <svg class="search-icon" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true">
+        <path d="M11.7 11l3 3M7 12.5a5.5 5.5 0 100-11 5.5 5.5 0 000 11z"
+              fill="none" stroke="currentColor" stroke-width="1.5"
+              stroke-linecap="round"/>
+      </svg>
+      <input id="search-input" class="search-input" type="text"
+             placeholder="Press Enter to search"
+             autocomplete="off" spellcheck="false" aria-label="Search">
+      <span id="search-count" class="search-count" aria-live="polite"></span>
+      <span id="search-spinner" class="search-spinner" role="status" aria-label="Searching" aria-hidden="true"></span>
+      <div class="search-scope" role="tablist" aria-label="Search scope">
+        <button id="search-scope-graph" class="search-scope-btn active"
+                role="tab" aria-selected="true" type="button">This graph</button>
+        <button id="search-scope-all" class="search-scope-btn" role="tab"
+                aria-selected="false" type="button" disabled
+                title="Cross-graph search is coming soon">All graphs<span class="search-soon">soon</span></button>
+      </div>
+    </div>
+    <div id="search-results" class="search-results" role="listbox" aria-label="Search results"></div>
+  </div>
+
+  <div id="empty-state" class="hidden">
+    <p>Click here for a new task</p>
+  </div>
+
+  <div id="hotkey-hint" class="hidden">
+    <span id="hotkey-hint-text"></span>
+  </div>
+
+  <div id="presence-bar" class="hidden" aria-label="Active collaborators"></div>
+
+  <!-- Generic in-app confirm modal (Phase B5d). Used in place of the
+       browser-native confirm() prompt. Driven via showConfirm() in app.js. -->
+  <div id="app-confirm-modal" class="modal hidden">
+    <div class="modal-content modal-content-form">
+      <h3 id="app-confirm-title">Confirm</h3>
+      <p id="app-confirm-body" class="modal-body-text"></p>
+      <div class="modal-actions modal-actions-center">
+        <button id="app-confirm-cancel" type="button">Cancel</button>
+        <button id="app-confirm-ok" class="primary" type="button">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Agent tokens panel (Phase B5d). Opened from the user pill in the sidebar
+       bottom when signed in. -->
+  <div id="agent-tokens-modal" class="modal hidden">
+    <div class="modal-content modal-content-form">
+      <h3>Agent tokens</h3>
+      <p class="modal-hint modal-hint-intro">
+        Tokens let Claude Code/Codex use 
+        <a href="https://github.com/kevinj507/multitap/blob/main/.claude/skills/multitap/SKILL.md" target="_blank" rel="noopener noreferrer">skill</a>
+        to act as you. Save it as <code>MULTITAP_AGENT_TOKEN</code> in your env.
+      </p>
+
+      <div class="modal-field">
+        <span>New token</span>
+        <div class="input-with-buttons">
+          <input type="text" id="agent-tokens-label" maxlength="64" placeholder="Label (optional, e.g. laptop)" autocomplete="off" spellcheck="false">
+          <button id="agent-tokens-mint" type="button" class="primary">Generate</button>
+        </div>
+        <div id="agent-tokens-just-minted" class="agent-tokens-minted hidden">
+          <p class="agent-tokens-minted-warning">
+            <i class="ph ph-warning-circle" aria-hidden="true"></i>
+            Copy now — this token won't be shown again.
+          </p>
+          <div class="input-with-buttons">
+            <input type="text" id="agent-tokens-plaintext" readonly>
+            <button id="agent-tokens-copy" type="button" title="Copy"><i class="ph ph-copy"></i></button>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-field">
+        <span>Your tokens</span>
+        <div id="agent-tokens-list" class="agent-tokens-list">
+          <p class="modal-hint" id="agent-tokens-empty">No tokens yet.</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div id="rename-modal" class="modal hidden">
+    <div class="modal-content modal-content-form">
+      <h3>Your name on this graph</h3>
+      <label class="modal-field modal-field-flush">
+        <input type="text" id="rename-modal-input" maxlength="64" autocomplete="off" spellcheck="false" placeholder="Display name">
+      </label>
+      <p class="modal-hint">Only visible to people on this graph. Stored in your browser.</p>
+      <div class="modal-actions modal-actions-center">
+        <button id="rename-modal-cancel" type="button">Cancel</button>
+        <button id="rename-modal-save" class="primary" type="button">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/cytoscape@3/dist/cytoscape.min.js"></script>
+  <script src="https://uicdn.toast.com/editor/latest/toastui-editor-all.min.js"></script>
+  <!-- Tier-0 lexical searcher is a pure ES module shared with the Node eval
+       harness; expose it on window so the (non-module) app.js can call it.
+       Module scripts run after parse but before any user keypress, so it is
+       always present by the time Cmd/Ctrl+F fires. -->
+  <script type="module">
+    import * as LexicalSearch from '/search-lexical.js';
+    window.LexicalSearch = LexicalSearch;
+  </script>
+  <!-- KB-search glue (server-result mapping + chunk locating) — same shared
+       pure-module pattern as the lexical searcher above. -->
+  <script type="module">
+    import * as KbSearch from '/search-kb.js';
+    window.KbSearch = KbSearch;
+  </script>
+  <!-- Reader TOC extractor (E16.17) — same shared pure-module pattern: app.js
+       reads window.ReaderToc to build the reader's Contents rail. -->
+  <script type="module">
+    import * as ReaderToc from '/reader-toc.js';
+    window.ReaderToc = ReaderToc;
+  </script>
+  <!-- Reader citation parser (E16 footnotes): app.js reads window.ReaderCite to
+       turn [[cite:<id>]] markers into numbered footnotes. -->
+  <script type="module">
+    import * as ReaderCite from '/reader-cite.js';
+    window.ReaderCite = ReaderCite;
+  </script>
+  <!-- Reader ?view=reader param helpers — same shared pure-module pattern:
+       app.js reads window.ReaderPick to honor and write the shareable
+       view param (the reader is a view of the active graph). -->
+  <script type="module">
+    import * as ReaderPick from '/reader-pick.js';
+    window.ReaderPick = ReaderPick;
+  </script>
+  <!-- Route resolution — same shared pure-module pattern: app.js reads
+       window.RouteParse to resolve /g/<id> plus its aliases and to refuse
+       silently treating unknown paths as home. -->
+  <script type="module">
+    import * as RouteParse from '/route-parse.js';
+    window.RouteParse = RouteParse;
+  </script>
+  <script src="/app.js"></script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9fb48c35da61281b',t:'MTc3ODcwNTU1NA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>

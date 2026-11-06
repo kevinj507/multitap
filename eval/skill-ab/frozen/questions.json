@@ -1,0 +1,216 @@
+{
+  "meta": {
+    "src": "fwmhe8ysfrnx9fw7",
+    "n": 12,
+    "note": "entity-title gold; works for screen (copy) + confirm (blank-slate)"
+  },
+  "questions": [
+    {
+      "id": "mh1",
+      "kind": "multihop",
+      "query": "how do GPU power-management chip makers connect to the companies that actually generate the electricity?",
+      "min_hops": 3,
+      "gold": {
+        "canonical": "Power-mgmt chips (156) reach power generators (78 utilities, 63 IPPs) only through the power-distribution (49), datacenter-buildout (29) and energy-grid (30) bridges — no direct edge.",
+        "must_mention": [
+          "Power management — MPWR, Delta, Vicor",
+          "Power distribution + racks — Schneider, Eaton",
+          "Datacenter physical buildout",
+          "Energy & grid",
+          "Regulated utilities serving DCs",
+          "IPPs / merchant power"
+        ]
+      }
+    },
+    {
+      "id": "mh2",
+      "kind": "multihop",
+      "query": "trace the supply chain from EUV lithography to a finished AI server",
+      "min_hops": 3,
+      "gold": {
+        "canonical": "The litho->foundry->GPU->server chain spans four categories; ASML (44) and the finished enterprise server (66) share no vocabulary, so only edge-walking links them via TSMC (43) and the GPU (34). (ODM node 154 sits a 4th hop out, deliberately left out of the 3-hop gold.)",
+        "must_mention": [
+          "ASML — EUV lithography monopoly",
+          "TSMC — leading-edge foundry",
+          "NVDA — GPU dominance",
+          "Compute chips",
+          "Enterprise AI servers — Dell, SMCI, HPE"
+        ]
+      }
+    },
+    {
+      "id": "mh3",
+      "kind": "multihop",
+      "query": "which single points of failure sit upstream of NVDA's GPUs?",
+      "min_hops": 2,
+      "gold": {
+        "canonical": "The SPOF hub (84) and material chokepoints (44 ASML, 60 wafers, 61 specialty gases) sit two hops from NVDA via TSMC (43)/substrate (157); a search for 'NVDA single points of failure' won't surface the upstream material chokepoints.",
+        "must_mention": [
+          "NVDA — GPU dominance",
+          "TSMC — leading-edge foundry",
+          "Single points of failure",
+          "ASML — EUV lithography monopoly",
+          "SK Hynix — HBM leader",
+          "BMC + substrate — ASPEED, Ajinomoto, Ibiden",
+          "Wafers + critical metals",
+          "Specialty gases + chemicals"
+        ]
+      }
+    },
+    {
+      "id": "mh4",
+      "kind": "multihop",
+      "query": "what depends on data-center liquid cooling, and what does cooling itself sit next to in the rack?",
+      "min_hops": 2,
+      "gold": {
+        "canonical": "Cooling (48) attaches to the GPU/server/datacenter cluster; the sibling power-management subsystem (156) is one hop further (via 34/164/29) — co-located in the rack but not lexically related to 'cooling'.",
+        "must_mention": [
+          "Cooling — Vertiv + liquid cooling",
+          "Datacenter physical buildout",
+          "Enterprise AI servers — Dell, SMCI, HPE",
+          "NVDA — GPU dominance",
+          "Dell AI server BOM decomposition",
+          "Power management — MPWR, Delta, Vicor"
+        ]
+      }
+    },
+    {
+      "id": "mh5",
+      "kind": "multihop",
+      "query": "how does uranium mining connect to the data centers it ends up powering?",
+      "min_hops": 2,
+      "gold": {
+        "canonical": "Uranium (51) reaches datacenter demand (29) only through nuclear (50)/energy-grid (30) then utilities (78)/IPPs (63); the fuel->power->datacenter path is pure traversal.",
+        "must_mention": [
+          "Uranium — Cameco, NXE, miners",
+          "Nuclear SMRs — Oklo, NuScale, BWXT",
+          "Energy & grid",
+          "Regulated utilities serving DCs",
+          "IPPs / merchant power",
+          "Datacenter physical buildout"
+        ]
+      }
+    },
+    {
+      "id": "mh6",
+      "kind": "multihop",
+      "query": "how are HBM memory makers connected to the foundry and advanced packaging that integrate them?",
+      "min_hops": 3,
+      "gold": {
+        "canonical": "HBM (39/40/41) links to advanced packaging (70 OSAT) and substrate (157) through the GPU (34) and foundry (43) — the co-packaging story is multi-hop, not a keyword match.",
+        "must_mention": [
+          "SK Hynix — HBM leader",
+          "Micron — US HBM + DRAM",
+          "Samsung Memory — HBM laggard but huge",
+          "NVDA — GPU dominance",
+          "TSMC — leading-edge foundry",
+          "OSAT + advanced packaging",
+          "BMC + substrate — ASPEED, Ajinomoto, Ibiden"
+        ]
+      }
+    },
+    {
+      "id": "mh7",
+      "kind": "multihop",
+      "query": "what is the full family of networking and interconnect components for AI clusters?",
+      "min_hops": 2,
+      "gold": {
+        "canonical": "The interconnect family (optical 55, fabric 56, cables 159, Astera 64) clusters under networking (31); DPUs (158) sit one hop deeper via switching silicon (54).",
+        "must_mention": [
+          "Networking & interconnect",
+          "Switching silicon — Broadcom, Marvell",
+          "Optical interconnect — Coherent, Lumentum, Astera",
+          "Fabric — Arista + NVDA Spectrum-X",
+          "Astera Labs (ALAB) — scale-up fabric",
+          "Active electrical cables — Credo, Macom",
+          "DPUs / SmartNICs"
+        ]
+      }
+    },
+    {
+      "id": "mh8",
+      "kind": "multihop",
+      "query": "how does geopolitical risk in China and Taiwan reach NVDA's GPU supply?",
+      "min_hops": 2,
+      "gold": {
+        "canonical": "Taiwan/China risk (62) flows to NVDA (34) through TSMC (43); the exposed chokepoints (ASML 44, wafers 60, packaging 70, China stack 79) are 62's direct neighbors — a blast-radius traversal.",
+        "must_mention": [
+          "Geopolitics — China + Taiwan",
+          "TSMC — leading-edge foundry",
+          "ASML — EUV lithography monopoly",
+          "Wafers + critical metals",
+          "OSAT + advanced packaging",
+          "China domestic AI stack",
+          "NVDA — GPU dominance"
+        ]
+      }
+    },
+    {
+      "id": "mh9",
+      "kind": "multihop",
+      "query": "starting from an enterprise AI server, what are its key bill-of-materials suppliers?",
+      "min_hops": 2,
+      "gold": {
+        "canonical": "A server's BOM (HBM 39, cooling 48, power 156, substrate 157, connectors 155) hangs off the Dell-BOM node (164), one hop past the server node (66).",
+        "must_mention": [
+          "Enterprise AI servers — Dell, SMCI, HPE",
+          "Dell AI server BOM decomposition",
+          "AI server ODMs — Foxconn, Quanta, Wiwynn",
+          "Cooling — Vertiv + liquid cooling",
+          "Power management — MPWR, Delta, Vicor",
+          "SK Hynix — HBM leader",
+          "BMC + substrate — ASPEED, Ajinomoto, Ibiden",
+          "Connectors — Amphenol, TE, Molex"
+        ]
+      }
+    },
+    {
+      "id": "mh10",
+      "kind": "multihop",
+      "query": "how does the demand from AI labs reach the nuclear fuel that ultimately powers it?",
+      "min_hops": 3,
+      "gold": {
+        "canonical": "AI labs (58) to nuclear fuel (51 uranium, 68 HALEU) is a 3-hop demand->power->fuel chain through merchant power (63) and the energy grid (30).",
+        "must_mention": [
+          "AI labs — OpenAI, Anthropic, xAI, Mistral",
+          "IPPs / merchant power",
+          "Energy & grid",
+          "Nuclear SMRs — Oklo, NuScale, BWXT",
+          "Uranium — Cameco, NXE, miners",
+          "HALEU + enrichment — Centrus, URENCO"
+        ]
+      }
+    },
+    {
+      "id": "mh11",
+      "kind": "multihop",
+      "query": "how is uranium connected to NVDA GPUs?",
+      "min_hops": 3,
+      "gold": {
+        "canonical": "Uranium and NVDA share zero vocabulary and are 3 hops apart: fuel -> energy grid (30) -> neocloud datacenter (65) -> GPU (34). Pure link-walking; search cannot connect them.",
+        "must_mention": [
+          "Uranium — Cameco, NXE, miners",
+          "Energy & grid",
+          "AI neoclouds — CoreWeave, Crusoe, Lambda",
+          "NVDA — GPU dominance"
+        ]
+      }
+    },
+    {
+      "id": "mh12",
+      "kind": "multihop",
+      "query": "as GPUs draw more power, which two rack subsystems both scale, and how are they connected?",
+      "min_hops": 2,
+      "gold": {
+        "canonical": "Cooling (48) and power delivery (49/156) are sibling rack subsystems connected only through the datacenter-buildout (29) and GPU (34) hubs.",
+        "must_mention": [
+          "Cooling — Vertiv + liquid cooling",
+          "Power management — MPWR, Delta, Vicor",
+          "Power distribution + racks — Schneider, Eaton",
+          "Datacenter physical buildout",
+          "NVDA — GPU dominance"
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,192 @@
+{
+  "_comment": "COVERAGE / REGRESSION reuse set for the context-pack endpoint (E13.2 / #459), derived 2026-06-17 from the frozen stock qrels (eval/dataset-stocks-direct-sample.json + eval/dataset-stocks-reasoning.json). gold_nodes = nodes graded >=2 (strongly relevant or dedicated) in those qrels, turned into binary SETS for COVERAGE@budget. DIRECT cases (kind=direct) are the single-node regression check: the pack must NOT regress vs search-only. REASONING cases (kind=reasoning) are intent!=surface queries. These reuse the same gid + frozen relevance labels as the #447/#455 search evals, so coverage numbers are comparable. No seed/min_hops: query-seeded only.",
+  "gid_default": "fwmhe8ysfrnx9fw7",
+  "threshold": 2,
+  "source": [
+    "dataset-stocks-direct-sample.json",
+    "dataset-stocks-reasoning.json"
+  ],
+  "cases": [
+    {
+      "id": "dir-q1",
+      "kind": "direct",
+      "query": "who makes HBM memory",
+      "gold_nodes": [
+        39,
+        40,
+        41
+      ]
+    },
+    {
+      "id": "dir-q4",
+      "kind": "direct",
+      "query": "small modular reactor stocks",
+      "gold_nodes": [
+        50
+      ]
+    },
+    {
+      "id": "dir-q9",
+      "kind": "direct",
+      "query": "liquid cooling companies",
+      "gold_nodes": [
+        48
+      ]
+    },
+    {
+      "id": "dir-q10",
+      "kind": "direct",
+      "query": "EUV lithography",
+      "gold_nodes": [
+        44
+      ]
+    },
+    {
+      "id": "dir-q13",
+      "kind": "direct",
+      "query": "Nvidia competitors in AI chips",
+      "gold_nodes": [
+        35,
+        37,
+        72
+      ]
+    },
+    {
+      "id": "dir-q22",
+      "kind": "direct",
+      "query": "data center REITs",
+      "gold_nodes": [
+        47
+      ]
+    },
+    {
+      "id": "dir-q26",
+      "kind": "direct",
+      "query": "power management chips for GPUs",
+      "gold_nodes": [
+        156
+      ]
+    },
+    {
+      "id": "dir-q30",
+      "kind": "direct",
+      "query": "humanoid robotics companies",
+      "gold_nodes": [
+        74
+      ]
+    },
+    {
+      "id": "dir-q35",
+      "kind": "direct",
+      "query": "EDA chip design software",
+      "gold_nodes": [
+        76
+      ]
+    },
+    {
+      "id": "dir-q39",
+      "kind": "direct",
+      "query": "silicon wafer suppliers",
+      "gold_nodes": [
+        60
+      ]
+    },
+    {
+      "id": "rea-r1",
+      "kind": "reasoning",
+      "query": "which firms keep the AI server farms powered up",
+      "gold_nodes": [
+        30,
+        49,
+        50,
+        52,
+        53,
+        63,
+        78,
+        156,
+        162
+      ]
+    },
+    {
+      "id": "rea-r2",
+      "kind": "reasoning",
+      "query": "what stops a new AI data center from turning on",
+      "gold_nodes": [
+        29,
+        30,
+        52,
+        53,
+        77,
+        78,
+        84
+      ]
+    },
+    {
+      "id": "rea-r3",
+      "kind": "reasoning",
+      "query": "who benefits if AI needs far more electricity than planned",
+      "gold_nodes": [
+        30,
+        50,
+        51,
+        52,
+        53,
+        63,
+        78,
+        162
+      ]
+    },
+    {
+      "id": "rea-r4",
+      "kind": "reasoning",
+      "query": "if one company could break the whole AI supply chain who is it",
+      "gold_nodes": [
+        33,
+        43,
+        44,
+        61,
+        84
+      ]
+    },
+    {
+      "id": "rea-r5",
+      "kind": "reasoning",
+      "query": "who makes money from the boring metal and wiring inside AI racks",
+      "gold_nodes": [
+        49,
+        155,
+        156,
+        159,
+        160
+      ]
+    },
+    {
+      "id": "rea-r6",
+      "kind": "reasoning",
+      "query": "what keeps a data center from overheating as the chips get hotter",
+      "gold_nodes": [
+        48
+      ]
+    },
+    {
+      "id": "rea-r7",
+      "kind": "reasoning",
+      "query": "companies that profit from AI's land and permit problem",
+      "gold_nodes": [
+        47,
+        77
+      ]
+    },
+    {
+      "id": "rea-r8",
+      "kind": "reasoning",
+      "query": "who quietly profits when hyperscalers overspend on AI",
+      "gold_nodes": [
+        65,
+        71,
+        82,
+        83
+      ]
+    }
+  ]
+}

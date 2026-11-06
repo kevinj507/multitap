@@ -1,0 +1,104 @@
+{
+  "_comment": "MULTI-HOP / CONNECTION eval set for the context-pack endpoint (E13.2 / graph node #459), authored 2026-06-17 on the stock graph fwmhe8ysfrnx9fw7 (73 nodes, 255 related edges, 0 dependency — a pure KB). Each case's gold answer is a SET of nodes (the subgraph a correct answer must draw on), INCLUDING the bridge nodes the related-link path passes through. These deliberately target questions where similarity search surfaces the endpoints but MISSES the connective bridges (or misses endpoints sharing no vocabulary with the query) — exactly where k-hop traversal should beat search-only. gold_nodes verified reachable within min_hops from `seed` over related edges by eval/verify-multihop.js (two-pass re-check per the #459 protocol). `seed` = the natural entry node (a correct search anchors here); the harness also seeds from query search hits. min_hops = max hop-distance from seed to any gold node.",
+  "gid_default": "fwmhe8ysfrnx9fw7",
+  "graph_snapshot": { "node_count": 73, "related_edges": 255, "as_of": "2026-06-17" },
+  "edge_types": ["related"],
+  "cases": [
+    {
+      "id": "mh1",
+      "query": "how do GPU power-management chip makers connect to the companies that actually generate the electricity?",
+      "seed": 156,
+      "gold_nodes": [156, 49, 29, 30, 78, 63],
+      "min_hops": 3,
+      "rationale": "Power-mgmt chips (156) reach power generators (78 utilities, 63 IPPs) only through the power-distribution (49), datacenter-buildout (29) and energy-grid (30) bridges — no direct edge."
+    },
+    {
+      "id": "mh2",
+      "query": "trace the supply chain from EUV lithography to a finished AI server",
+      "seed": 44,
+      "gold_nodes": [44, 43, 34, 26, 66],
+      "min_hops": 3,
+      "rationale": "The litho->foundry->GPU->server chain spans four categories; ASML (44) and the finished enterprise server (66) share no vocabulary, so only edge-walking links them via TSMC (43) and the GPU (34). (ODM node 154 sits a 4th hop out, deliberately left out of the 3-hop gold.)"
+    },
+    {
+      "id": "mh3",
+      "query": "which single points of failure sit upstream of NVDA's GPUs?",
+      "seed": 34,
+      "gold_nodes": [34, 43, 84, 44, 39, 157, 60, 61],
+      "min_hops": 2,
+      "rationale": "The SPOF hub (84) and material chokepoints (44 ASML, 60 wafers, 61 specialty gases) sit two hops from NVDA via TSMC (43)/substrate (157); a search for 'NVDA single points of failure' won't surface the upstream material chokepoints."
+    },
+    {
+      "id": "mh4",
+      "query": "what depends on data-center liquid cooling, and what does cooling itself sit next to in the rack?",
+      "seed": 48,
+      "gold_nodes": [48, 29, 66, 34, 164, 156],
+      "min_hops": 2,
+      "rationale": "Cooling (48) attaches to the GPU/server/datacenter cluster; the sibling power-management subsystem (156) is one hop further (via 34/164/29) — co-located in the rack but not lexically related to 'cooling'."
+    },
+    {
+      "id": "mh5",
+      "query": "how does uranium mining connect to the data centers it ends up powering?",
+      "seed": 51,
+      "gold_nodes": [51, 50, 30, 78, 63, 29],
+      "min_hops": 2,
+      "rationale": "Uranium (51) reaches datacenter demand (29) only through nuclear (50)/energy-grid (30) then utilities (78)/IPPs (63); the fuel->power->datacenter path is pure traversal."
+    },
+    {
+      "id": "mh6",
+      "query": "how are HBM memory makers connected to the foundry and advanced packaging that integrate them?",
+      "seed": 39,
+      "gold_nodes": [39, 40, 41, 34, 43, 70, 157],
+      "min_hops": 3,
+      "rationale": "HBM (39/40/41) links to advanced packaging (70 OSAT) and substrate (157) through the GPU (34) and foundry (43) — the co-packaging story is multi-hop, not a keyword match."
+    },
+    {
+      "id": "mh7",
+      "query": "what is the full family of networking and interconnect components for AI clusters?",
+      "seed": 31,
+      "gold_nodes": [31, 54, 55, 56, 64, 159, 158],
+      "min_hops": 2,
+      "rationale": "The interconnect family (optical 55, fabric 56, cables 159, Astera 64) clusters under networking (31); DPUs (158) sit one hop deeper via switching silicon (54)."
+    },
+    {
+      "id": "mh8",
+      "query": "how does geopolitical risk in China and Taiwan reach NVDA's GPU supply?",
+      "seed": 62,
+      "gold_nodes": [62, 43, 44, 60, 70, 79, 34],
+      "min_hops": 2,
+      "rationale": "Taiwan/China risk (62) flows to NVDA (34) through TSMC (43); the exposed chokepoints (ASML 44, wafers 60, packaging 70, China stack 79) are 62's direct neighbors — a blast-radius traversal."
+    },
+    {
+      "id": "mh9",
+      "query": "starting from an enterprise AI server, what are its key bill-of-materials suppliers?",
+      "seed": 66,
+      "gold_nodes": [66, 164, 154, 48, 156, 39, 157, 155],
+      "min_hops": 2,
+      "rationale": "A server's BOM (HBM 39, cooling 48, power 156, substrate 157, connectors 155) hangs off the Dell-BOM node (164), one hop past the server node (66)."
+    },
+    {
+      "id": "mh10",
+      "query": "how does the demand from AI labs reach the nuclear fuel that ultimately powers it?",
+      "seed": 58,
+      "gold_nodes": [58, 63, 30, 50, 51, 68],
+      "min_hops": 3,
+      "rationale": "AI labs (58) to nuclear fuel (51 uranium, 68 HALEU) is a 3-hop demand->power->fuel chain through merchant power (63) and the energy grid (30)."
+    },
+    {
+      "id": "mh11",
+      "query": "how is uranium connected to NVDA GPUs?",
+      "seed": 51,
+      "gold_nodes": [51, 30, 65, 34],
+      "min_hops": 3,
+      "rationale": "Uranium and NVDA share zero vocabulary and are 3 hops apart: fuel -> energy grid (30) -> neocloud datacenter (65) -> GPU (34). Pure link-walking; search cannot connect them."
+    },
+    {
+      "id": "mh12",
+      "query": "as GPUs draw more power, which two rack subsystems both scale, and how are they connected?",
+      "seed": 48,
+      "gold_nodes": [48, 156, 49, 29, 34],
+      "min_hops": 2,
+      "rationale": "Cooling (48) and power delivery (49/156) are sibling rack subsystems connected only through the datacenter-buildout (29) and GPU (34) hubs."
+    }
+  ]
+}

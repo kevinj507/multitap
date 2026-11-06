@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Multitap</title>
+  <!-- A node permalink is a private-by-default reading surface for whoever can
+       already read the graph. Keep it out of indexes — the graph itself decides
+       who may read, and a crawler shouldn't be the one testing that. -->
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" type="image/png" href="https://static.thenounproject.com/png/317687-200.png">
+
+  <!-- Toast UI VIEWER bundle, not the editor bundle index.html loads:
+       toastui-editor-viewer.min.js is 141KB vs -all's 534KB, and its CSS is
+       10KB vs 165KB. Crucially it emits the SAME `.toastui-editor-contents`
+       DOM, so the reader's typography in style.css applies to this page
+       verbatim — matching the report is a consequence of the markup, not a
+       second implementation of it. It also carries the same bundled sanitizer
+       the reader relies on, so node bodies never reach the DOM via innerHTML.
+       (If dark theme is re-enabled, add theme/toastui-editor-dark.min.css here
+       the way index.html does — see loadSettings() in app.js.) -->
+  <link rel="stylesheet" href="https://uicdn.toast.com/editor/latest/toastui-editor-viewer.min.css">
+  <!-- Same Phosphor icon set index.html loads — the action row's graph/book
+       glyphs come from it. -->
+  <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
+  <!-- Same typefaces as the app: the reader's --font-display / --font-body
+       tokens resolve to Playfair Display / DM Sans, so without these the page
+       would render the right structure in the wrong voice. -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=EB+Garamond:wght@400;500&family=Inter:wght@400;500;600&family=Nunito:wght@600&family=Playfair+Display:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body class="view-node">
+  <!-- Single-node reading page (/g/<gid>/n/<id>). Rendered by node.js off ONE
+       read of /tasks/:id plus /graph for connections. No cytoscape, no SSE, no
+       presence, no Clerk JS — the API reads authenticate off the session
+       cookie server-side, so this page never loads an auth SDK. Reads only:
+       nothing here writes to the graph. -->
+  <main id="node-page">
+    <article id="node-article">
+      <!-- Mode actions. "Open graph" is the same node in the SPA canvas,
+           selected (?node=<id>&view=graph). "Open report" appears only when
+           this graph's report actually CITES this node — node.js checks the
+           report body — and opens the reader. Both are plain anchors: new-tab,
+           middle-click and keyboard behaviors come free. -->
+      <nav id="node-actions">
+        <a id="node-open-graph" href="#"><i class="ph ph-graph" aria-hidden="true"></i>Open graph</a>
+        <a id="node-open-report" class="hidden" href="#"><i class="ph ph-book-open" aria-hidden="true"></i>Open report</a>
+      </nav>
+
+      <header id="node-header" class="hidden">
+        <div id="node-eyebrow" class="hidden"></div>
+        <h1 id="node-title"></h1>
+        <p id="node-desc"></p>
+        <div id="node-meta"></div>
+      </header>
+
+      <!-- Toast UI Viewer mounts here. -->
+      <div id="node-body"></div>
+
+      <!-- The node's edges, as text. This is the context the graph canvas used
+           to be the only way to see: what this node supports, contradicts, or
+           is required for. Each row links to that node's own permalink. -->
+      <section id="node-connections" class="hidden"></section>
+
+      <div id="node-status" class="hidden"><p></p></div>
+    </article>
+  </main>
+
+  <!-- Classic script, so it runs before the deferred module below and
+       `toastui.Editor` (the Viewer class in this bundle) is always defined by
+       the time node.js mounts it. -->
+  <script src="https://uicdn.toast.com/editor/latest/toastui-editor-viewer.min.js"></script>
+  <script type="module" src="/node.js"></script>
+</body>
+</html>

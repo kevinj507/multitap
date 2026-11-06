@@ -1,0 +1,21 @@
+node_modules
+.env
+.env.local
+.env.*.local
+.venv
+dist
+build
+.wafer/
+.multitap/
+.graphtask/
+
+# Python bytecode (Modal app)
+__pycache__/
+*.pyc
+eval/.doc-expansions-*.json
+eval/.doc2query-*.json
+eval/.static-bench-texts.json
+eval/skill-ab/frozen/stock-snapshot.json
+
+# Static-embedding model artifacts (fetched by scripts/fetch-static-model.mjs)
+models/

@@ -1,0 +1,233 @@
+{
+ "_comment": "E10 (#436) third real-graph eval set: iOS Codebase Map (graph fffzkhumqp4a33e7, 62 nodes incl. SECTION hubs, 202 related edges — the densest real edge structure available; expansion gets its fairest trial here). Frozen queries + graded qrels (0-3) on real node ids, authored 2026-06-12 by content-verified pooled assessment (evidence quotes archived on node #436 session). DO NOT edit graph or qrels.",
+ "gid": "fffzkhumqp4a33e7",
+ "corpus": [],
+ "queries": {
+  "q1": "where is the countdown logic that ticks every second",
+  "q2": "live activity on the lock screen and dynamic island",
+  "q3": "how presets are stored and managed",
+  "q4": "pause all running timers with Siri",
+  "q5": "the enum for timer states",
+  "q6": "playing the alarm sound when a timer finishes",
+  "q7": "scheduling local notifications for timer completion",
+  "q8": "how the widget shares data with the main app",
+  "q9": "color themes and palettes",
+  "q10": "the custom monospaced font",
+  "q11": "cropping and storing background images for timers",
+  "q12": "the sheet for creating a new timer",
+  "q13": "natural language timer parsing with an LLM",
+  "q14": "what to change when porting to Mac",
+  "q15": "the home screen widget",
+  "q16": "buttons that look like physical hardware",
+  "q17": "the root view that lists all timers",
+  "q18": "App Intents exposed to Shortcuts",
+  "q19": "singletons that own global state",
+  "q20": "how SwiftUI views observe timer state changes",
+  "q21": "the card that renders one timer",
+  "q22": "editing an existing preset",
+  "q23": "app entry point and scene setup",
+  "q24": "canceling a timer from the live activity",
+  "q25": "patterns worth copying to other projects",
+  "q26": "the entity that exposes timers to Siri queries",
+  "q27": "picking a photo from the library",
+  "q28": "the chamfered rectangle shape",
+  "q29": "starting a timer from a saved preset via voice",
+  "q30": "where notification permissions are requested",
+  "q31": "settings screen",
+  "q32": "the app group container identifier"
+ },
+ "qrels": {
+  "q1": {
+   "86": 1,
+   "91": 2,
+   "102": 3,
+   "106": 1,
+   "147": 1
+  },
+  "q2": {
+   "98": 2,
+   "99": 2,
+   "100": 2,
+   "106": 3,
+   "138": 1,
+   "139": 1,
+   "143": 3
+  },
+  "q3": {
+   "93": 3,
+   "103": 3,
+   "119": 1,
+   "120": 1,
+   "122": 1
+  },
+  "q4": {
+   "102": 2,
+   "127": 1,
+   "129": 1,
+   "131": 3
+  },
+  "q5": {
+   "91": 1,
+   "92": 3
+  },
+  "q6": {
+   "88": 1,
+   "102": 1,
+   "105": 3
+  },
+  "q7": {
+   "88": 1,
+   "102": 1,
+   "104": 3
+  },
+  "q8": {
+   "96": 2,
+   "97": 3,
+   "138": 1,
+   "142": 1,
+   "147": 2
+  },
+  "q9": {
+   "94": 2,
+   "108": 2,
+   "109": 3,
+   "110": 2,
+   "111": 2,
+   "112": 2,
+   "123": 1
+  },
+  "q10": {
+   "109": 1,
+   "113": 3
+  },
+  "q11": {
+   "91": 1,
+   "95": 3,
+   "97": 1,
+   "107": 3,
+   "124": 2,
+   "125": 1
+  },
+  "q12": {
+   "89": 1,
+   "120": 3
+  },
+  "q13": {
+   "127": 1,
+   "128": 2,
+   "129": 1,
+   "134": 1,
+   "144": 1,
+   "145": 3
+  },
+  "q14": {
+   "86": 1,
+   "146": 3,
+   "147": 2
+  },
+  "q15": {
+   "138": 2,
+   "139": 1,
+   "140": 3,
+   "141": 2,
+   "142": 2
+  },
+  "q16": {
+   "115": 3
+  },
+  "q17": {
+   "87": 1,
+   "89": 2,
+   "117": 3
+  },
+  "q18": {
+   "127": 2,
+   "128": 1,
+   "129": 1,
+   "130": 1,
+   "131": 1,
+   "132": 1,
+   "133": 1,
+   "134": 1,
+   "135": 3
+  },
+  "q19": {
+   "101": 3,
+   "102": 2,
+   "103": 1,
+   "105": 1,
+   "106": 1,
+   "107": 1,
+   "109": 1,
+   "147": 3
+  },
+  "q20": {
+   "86": 1,
+   "89": 1,
+   "91": 1,
+   "102": 3,
+   "147": 2
+  },
+  "q21": {
+   "118": 3,
+   "119": 1,
+   "142": 2
+  },
+  "q22": {
+   "103": 2,
+   "119": 1,
+   "122": 3
+  },
+  "q23": {
+   "87": 2,
+   "88": 3,
+   "139": 1
+  },
+  "q24": {
+   "99": 3,
+   "106": 1,
+   "143": 2
+  },
+  "q25": {
+   "86": 2,
+   "91": 2,
+   "102": 2,
+   "105": 1,
+   "146": 1,
+   "147": 3
+  },
+  "q26": {
+   "127": 1,
+   "136": 3,
+   "137": 1,
+   "147": 1
+  },
+  "q27": {
+   "124": 2,
+   "125": 3
+  },
+  "q28": {
+   "109": 1,
+   "114": 3
+  },
+  "q29": {
+   "93": 1,
+   "103": 1,
+   "133": 3,
+   "135": 2,
+   "137": 2
+  },
+  "q30": {
+   "88": 2,
+   "104": 3
+  },
+  "q31": {
+   "89": 1,
+   "123": 3
+  },
+  "q32": {
+   "96": 1,
+   "97": 3
+  }
+ }
+}

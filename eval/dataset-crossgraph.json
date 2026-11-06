@@ -1,0 +1,37 @@
+{
+  "_comment": "E1 (#223) cross-graph eval set: drives SearchService the way POST /api/search (searchAll.js) does — one pipeline run over ctx.gids = the user's owned graphs (stock fwmhe8ysfrnx9fw7 + TIL btgbx4szzfhaxcxt, both owned by the same user). Stock-side qrels copied verbatim from frozen dataset-stocks.json; TIL-side from frozen dataset-til.json. leakProbeNodes are honeypot nodes in graph 6czz62n8bd2nye6r (owner NULL — NOT owned): their text strongly matches q1/q11/q12 by construction, so if one EVER appears in any result list, ownership scoping is broken. Run: node eval/cross-graph.js. FROZEN — do not edit.",
+  "gids": ["fwmhe8ysfrnx9fw7", "btgbx4szzfhaxcxt"],
+  "leakProbeNodes": [428, 429, 430],
+  "queries": {
+    "x1": "who makes HBM memory",
+    "x2": "nuclear power for data centers",
+    "x3": "EUV lithography",
+    "x4": "optical interconnect for AI networking",
+    "x5": "data center REITs",
+    "x6": "find out which process is listening on a port",
+    "x7": "recover a commit after a hard reset",
+    "x8": "detect the user's dark mode preference",
+    "x9": "take a screenshot straight to the clipboard on a mac",
+    "x10": "add a foreign key to a big table without downtime",
+    "x11": "postgres index tuning tips",
+    "x12": "git interactive rebase to squash and reorder commits",
+    "x13": "tmux tips and tricks",
+    "x14": "format a date in javascript without a library"
+  },
+  "qrels": {
+    "x1": { "27": 1, "39": 3, "40": 3, "41": 3 },
+    "x2": { "30": 1, "50": 3, "51": 2, "68": 1, "78": 2 },
+    "x3": { "28": 1, "44": 3, "45": 1 },
+    "x4": { "55": 3, "64": 2, "159": 1 },
+    "x5": { "47": 3 },
+    "x6": { "256": 3 },
+    "x7": { "299": 3 },
+    "x8": { "320": 3, "420": 2 },
+    "x9": { "355": 3, "351": 2, "361": 1 },
+    "x10": { "261": 3, "238": 1, "262": 1, "263": 1 },
+    "x11": { "259": 1, "263": 2, "264": 1, "261": 2, "237": 1 },
+    "x12": { "303": 3, "286": 1, "294": 1 },
+    "x13": { "363": 2, "364": 1, "365": 1, "366": 1, "367": 1, "368": 1, "369": 1, "370": 1, "371": 1, "372": 1, "373": 1, "374": 1, "375": 1 },
+    "x14": { "314": 3, "322": 1 }
+  }
+}

@@ -1,0 +1,428 @@
+{
+  "meta": {
+    "gid": "fwmhe8ysfrnx9fw7",
+    "base": "http://127.0.0.1:3000",
+    "topK": 10,
+    "seedN": 3,
+    "hops": 2,
+    "signal_primary": "capture3"
+  },
+  "perClass": {
+    "capture3": {
+      "neighborhood": {
+        "n": 12,
+        "mean": 0.976,
+        "std": 0.079,
+        "min": 0.714,
+        "max": 1,
+        "values": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          0.714,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      "scattered": {
+        "n": 8,
+        "mean": 0.964,
+        "std": 0.095,
+        "min": 0.714,
+        "max": 1,
+        "values": [
+          1,
+          1,
+          0.714,
+          1,
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      "direct": {
+        "n": 10,
+        "mean": 0.9,
+        "std": 0.129,
+        "min": 0.571,
+        "max": 1,
+        "values": [
+          0.857,
+          0.857,
+          0.571,
+          1,
+          0.857,
+          1,
+          1,
+          0.857,
+          1,
+          1
+        ]
+      }
+    },
+    "capture1": {
+      "neighborhood": {
+        "n": 12,
+        "mean": 0.778,
+        "std": 0.176,
+        "min": 0.444,
+        "max": 1,
+        "values": [
+          0.444,
+          0.889,
+          0.778,
+          1,
+          0.778,
+          0.556,
+          1,
+          0.556,
+          1,
+          0.778,
+          0.778,
+          0.778
+        ]
+      },
+      "scattered": {
+        "n": 8,
+        "mean": 0.889,
+        "std": 0.124,
+        "min": 0.667,
+        "max": 1,
+        "values": [
+          1,
+          1,
+          0.667,
+          0.778,
+          1,
+          0.778,
+          0.889,
+          1
+        ]
+      },
+      "direct": {
+        "n": 10,
+        "mean": 0.811,
+        "std": 0.141,
+        "min": 0.556,
+        "max": 1,
+        "values": [
+          0.889,
+          0.667,
+          0.667,
+          1,
+          0.889,
+          0.556,
+          1,
+          0.778,
+          0.889,
+          0.778
+        ]
+      }
+    },
+    "largestClusterFrac": {
+      "neighborhood": {
+        "n": 12,
+        "mean": 1,
+        "std": 0,
+        "min": 1,
+        "max": 1,
+        "values": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      "scattered": {
+        "n": 8,
+        "mean": 1,
+        "std": 0,
+        "min": 1,
+        "max": 1,
+        "values": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      "direct": {
+        "n": 10,
+        "mean": 1,
+        "std": 0,
+        "min": 1,
+        "max": 1,
+        "values": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ]
+      }
+    }
+  },
+  "separation_nb_vs_scattered": {
+    "capture3": {
+      "thr": 0.714,
+      "acc": 0.6,
+      "tp": 12,
+      "tn": 0,
+      "n_nb": 12,
+      "n_sc": 8
+    },
+    "capture1": {
+      "thr": 0.444,
+      "acc": 0.6,
+      "tp": 12,
+      "tn": 0,
+      "n_nb": 12,
+      "n_sc": 8
+    },
+    "largestClusterFrac": {
+      "thr": 1,
+      "acc": 0.6,
+      "tp": 12,
+      "tn": 0,
+      "n_nb": 12,
+      "n_sc": 8
+    }
+  },
+  "rows": [
+    {
+      "class": "neighborhood",
+      "id": "mh1",
+      "capture3": 1,
+      "capture1": 0.444,
+      "largestClusterFrac": 1
+    },
+    {
+      "class": "neighborhood",
+      "id": "mh2",
+      "capture3": 1,
+      "capture1": 0.889,
+      "largestClusterFrac": 1
+    },
+    {
+      "class": "neighborhood",
+      "id": "mh3",
+      "capture3": 1,
+      "capture1": 0.778,
+      "largestClusterFrac": 1
+    },
+    {
+      "class": "neighborhood",
+      "id": "mh4",
+      "capture3": 1,
+      "capture1": 1,
+      "largestClusterFrac": 1
+    },
+    {
+      "class": "neighborhood",
+      "id": "mh5",
+      "capture3": 1,
+      "capture1": 0.778,
+      "largestClusterFrac": 1
+    },
+    {
+      "class": "neighborhood",
+      "id": "mh6",
+      "capture3": 0.714,
+      "capture1": 0.556,
+      "largestClusterFrac": 1
+    },
+    {
+      "class": "neighborhood",
+      "id": "mh7",
+      "capture3": 1,
+      "capture1": 1,
+      "largestClusterFrac": 1
+    },
+    {
+      "class": "neighborhood",
+      "id": "mh8",
+      "capture3": 1,
+      "capture1": 0.556,
+      "largestClusterFrac": 1
+    },
+    {
+      "class": "neighborhood",
+      "id": "mh9",
+      "capture3": 1,
+      "capture1": 1,
+      "largestClusterFrac": 1
+    },
+    {
+      "class": "neighborhood",
+      "id": "mh10",
+      "capture3": 1,
+      "capture1": 0.778,
+      "largestClusterFrac": 1
+    },
+    {
+      "class": "neighborhood",
+      "id": "mh11",
+      "capture3": 1,
+      "capture1": 0.778,
+      "largestClusterFrac": 1
+    },
+    {
+      "class": "neighborhood",
+      "id": "mh12",
+      "capture3": 1,
+      "capture1": 0.778,
+      "largestClusterFrac": 1
+    },
+    {
+      "class": "scattered",
+      "id": "rea-r1",
+      "capture3": 1,
+      "capture1": 1,
+      "largestClusterFrac": 1
+    },
+    {
+      "class": "scattered",
+      "id": "rea-r2",
+      "capture3": 1,
+      "capture1": 1,
+      "largestClusterFrac": 1
+    },
+    {
+      "class": "scattered",
+      "id": "rea-r3",
+      "capture3": 0.714,
+      "capture1": 0.667,
+      "largestClusterFrac": 1
+    },
+    {
+      "class": "scattered",
+      "id": "rea-r4",
+      "capture3": 1,
+      "capture1": 0.778,
+      "largestClusterFrac": 1
+    },
+    {
+      "class": "scattered",
+      "id": "rea-r5",
+      "capture3": 1,
+      "capture1": 1,
+      "largestClusterFrac": 1
+    },
+    {
+      "class": "scattered",
+      "id": "rea-r6",
+      "capture3": 1,
+      "capture1": 0.778,
+      "largestClusterFrac": 1
+    },
+    {
+      "class": "scattered",
+      "id": "rea-r7",
+      "capture3": 1,
+      "capture1": 0.889,
+      "largestClusterFrac": 1
+    },
+    {
+      "class": "scattered",
+      "id": "rea-r8",
+      "capture3": 1,
+      "capture1": 1,
+      "largestClusterFrac": 1
+    },
+    {
+      "class": "direct",
+      "id": "dir-q1",
+      "capture3": 0.857,
+      "capture1": 0.889,
+      "largestClusterFrac": 1
+    },
+    {
+      "class": "direct",
+      "id": "dir-q4",
+      "capture3": 0.857,
+      "capture1": 0.667,
+      "largestClusterFrac": 1
+    },
+    {
+      "class": "direct",
+      "id": "dir-q9",
+      "capture3": 0.571,
+      "capture1": 0.667,
+      "largestClusterFrac": 1
+    },
+    {
+      "class": "direct",
+      "id": "dir-q10",
+      "capture3": 1,
+      "capture1": 1,
+      "largestClusterFrac": 1
+    },
+    {
+      "class": "direct",
+      "id": "dir-q13",
+      "capture3": 0.857,
+      "capture1": 0.889,
+      "largestClusterFrac": 1
+    },
+    {
+      "class": "direct",
+      "id": "dir-q22",
+      "capture3": 1,
+      "capture1": 0.556,
+      "largestClusterFrac": 1
+    },
+    {
+      "class": "direct",
+      "id": "dir-q26",
+      "capture3": 1,
+      "capture1": 1,
+      "largestClusterFrac": 1
+    },
+    {
+      "class": "direct",
+      "id": "dir-q30",
+      "capture3": 0.857,
+      "capture1": 0.778,
+      "largestClusterFrac": 1
+    },
+    {
+      "class": "direct",
+      "id": "dir-q35",
+      "capture3": 1,
+      "capture1": 0.889,
+      "largestClusterFrac": 1
+    },
+    {
+      "class": "direct",
+      "id": "dir-q39",
+      "capture3": 1,
+      "capture1": 0.778,
+      "largestClusterFrac": 1
+    }
+  ],
+  "_comment": "E13 router probe (#464 follow-up, 2026-06-21). Tests whether a CHEAP query-time STRUCTURAL signal (compactness of top search hits over the related-graph) can auto-route between neighborhood/multihop queries (C wins) and scattered/reasoning queries (A wins). NEGATIVE RESULT: it cannot, on this graph. capture3 neighborhood mean 0.976 vs scattered 0.964 (no separation); largestClusterFrac=1.0 for ALL queries/classes; best threshold acc=0.60 = base rate. CAUSE (fundamental, not tuning): the 73-node/255-edge graph is too small+dense — avg node reaches 11%/53%/91% of the graph within 1/2/3 hops, so a hops=2 pack from the top-3 seeds already spans ~half the graph; k-hop locality localizes nothing. The neighborhood-vs-scattered distinction is NOT structural reachability (always true here) but lexical/semantic (gold near-but-off-seed) which no unsupervised signal sees without labels. Implication: no cheap auto-router at this scale (and it is unnecessary — the pack ~= half the graph anyway); routing falls to the AGENT reading query intent (already works) or default-on. A structural router might only become feasible+necessary on a MUCH larger graph (1000s of nodes) where 2-hop neighborhoods are genuinely local."
+}

@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# Supply-chain gate: audit dependencies before any push leaves this machine.
+# Enable once per clone:  git config core.hooksPath .githooks
+# Emergency skip:         SUPPLY_GATE_SKIP=1 git push
+set -u
+exec python3 "$(git rev-parse --show-toplevel)/.githooks/supply_chain_gate.py"

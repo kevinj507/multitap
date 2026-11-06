@@ -1,0 +1,57 @@
+{
+  "s-baseline": {
+    "covN10": 0.56,
+    "covN30": 0.858,
+    "precN10": 0.342,
+    "bridgeReach": 0.863,
+    "relEdges": 279,
+    "edgeDensity": 3.771,
+    "aq_strict": 0,
+    "aq_lenient": 0.5,
+    "edgesAdded": 139
+  },
+  "s-c1": {
+    "covN10": 0.534,
+    "covN30": 0.831,
+    "precN10": 0.329,
+    "bridgeReach": 0.909,
+    "relEdges": 291,
+    "edgeDensity": 3.88,
+    "aq_strict": 0.083,
+    "aq_lenient": 0.583,
+    "edgesAdded": 143
+  },
+  "s-c2": {
+    "covN10": 0.585,
+    "covN30": 0.839,
+    "precN10": 0.358,
+    "bridgeReach": 0.772,
+    "relEdges": 416.5,
+    "edgeDensity": 5.447,
+    "aq_strict": 0.083,
+    "aq_lenient": 0.75,
+    "edgesAdded": 303
+  },
+  "s-c3": {
+    "covN10": 0.575,
+    "covN30": 0.833,
+    "precN10": 0.35,
+    "bridgeReach": 0.863,
+    "relEdges": 246,
+    "edgeDensity": 3.303,
+    "aq_strict": 0,
+    "aq_lenient": 0.75,
+    "edgesAdded": 124
+  },
+  "s-c4": {
+    "covN10": 0.561,
+    "covN30": 0.833,
+    "precN10": 0.346,
+    "bridgeReach": 0.863,
+    "relEdges": 247,
+    "edgeDensity": 3.314,
+    "aq_strict": 0,
+    "aq_lenient": 0.75,
+    "edgesAdded": 107
+  }
+}

@@ -1,0 +1,1815 @@
+{
+  "_comment": "E13.7 (#464) frozen blind answer-quality results, 2026-06-17/18. Two regimes on stock graph fwmhe8ysfrnx9fw7. 84 blind runs each (12 multihop x{A,C}x3 + 6 direct x{A,C}x1), fresh answer agents + independent judges (workflow context-pack-answer-quality). A=search-only pack, C=context-pack (hops2/alpha0.5), both at matched token budget. VERDICT: answer quality TIES at BOTH budgets (C does NOT beat A); the #463 coverage win does not translate into an answer-quality win. No regression (direct + multihop tie). Bar #3 (C>A on answers) NOT met.",
+  "generous_budget_maxNodes30": {
+    "multihop": {
+      "A": {
+        "acc_strict": 0.944,
+        "perpass": [
+          1,
+          0.917,
+          0.917
+        ],
+        "std": 0.039
+      },
+      "C": {
+        "acc_strict": 0.917,
+        "perpass": [
+          0.917,
+          1,
+          0.833
+        ],
+        "std": 0.068
+      }
+    },
+    "direct": {
+      "A": 1,
+      "C": 1
+    }
+  },
+  "tight_budget_maxNodes10": {
+    "multihop": {
+      "A": {
+        "acc_strict": 0.556,
+        "acc_lenient": 0.75,
+        "perpass": [
+          0.5,
+          0.583,
+          0.583
+        ],
+        "std": 0.039
+      },
+      "C": {
+        "acc_strict": 0.571,
+        "acc_lenient": 0.8,
+        "perpass": [
+          0.583,
+          0.455,
+          0.667
+        ],
+        "std": 0.087,
+        "n": 35
+      }
+    },
+    "direct": {
+      "A": 0.833,
+      "C": 0.833
+    }
+  },
+  "_comment2_weak_model": "2026-06-19 weak-model follow-up (#464 FOLLOW-UP QUEUED): re-ran the SAME tight-budget (maxNodes=10) blind benchmark with SONNET 4.6 answer agents (Opus judge held fixed; 84 runs, none dropped). RESULT FLIPS vs Opus: context-pack C BEATS search-only A on multi-hop answer quality for the weak model. MH strict A 0.528 vs C 0.694 (+0.166, ~4x the 0.039 per-pass std; every C pass > every A pass -> clean separation). Lenient ties 0.944 (C converts partials->corrects: weak model gets the FULL chain right with the pre-assembled neighborhood). C wins the hardest sibling/blast-radius hops (mh12 0/3->3/3, mh8 0/3->2/3, mh11 0/3->1/3). Direct near-tie A 1.0 vs C 0.833 (1/6 C partial=dir-q26 missed Delta/Vicor; lenient 1.0; no real regression). Opus tied A vs C at this budget => the #463 coverage win DOES convert to an answer-quality win for weaker models. Ship justification: context-pack helps the consumers who need it most (non-Opus models).",
+  "weak_model_tight_maxNodes10": {
+    "answer_model": "sonnet",
+    "judge_model": "opus",
+    "maxNodes": 10,
+    "multihop": {
+      "A": {
+        "acc_strict": 0.528,
+        "acc_lenient": 0.944,
+        "perpass": [
+          0.5,
+          0.583,
+          0.5
+        ],
+        "std": 0.039,
+        "n": 36
+      },
+      "C": {
+        "acc_strict": 0.694,
+        "acc_lenient": 0.944,
+        "perpass": [
+          0.75,
+          0.667,
+          0.667
+        ],
+        "std": 0.039,
+        "n": 36
+      }
+    },
+    "direct": {
+      "A": {
+        "acc_strict": 1,
+        "acc_lenient": 1,
+        "n": 6
+      },
+      "C": {
+        "acc_strict": 0.833,
+        "acc_lenient": 1,
+        "n": 6
+      }
+    },
+    "vs_opus_baseline": {
+      "note": "Opus tight (#464) multihop A 0.556 / C 0.571 = TIE; Sonnet multihop A 0.528 / C 0.694 = C WINS +0.166",
+      "opus_multihop_A": 0.556,
+      "opus_multihop_C": 0.571
+    },
+    "perQuestion_multihop": [
+      {
+        "id": "mh1",
+        "A": "0/3 ok, 1 partial",
+        "C": "0/3 ok, 1 partial"
+      },
+      {
+        "id": "mh2",
+        "A": "3/3 ok, 0 partial",
+        "C": "3/3 ok, 0 partial"
+      },
+      {
+        "id": "mh3",
+        "A": "0/3 ok, 3 partial",
+        "C": "0/3 ok, 3 partial"
+      },
+      {
+        "id": "mh4",
+        "A": "1/3 ok, 2 partial",
+        "C": "1/3 ok, 2 partial"
+      },
+      {
+        "id": "mh5",
+        "A": "3/3 ok, 0 partial",
+        "C": "3/3 ok, 0 partial"
+      },
+      {
+        "id": "mh6",
+        "A": "3/3 ok, 0 partial",
+        "C": "3/3 ok, 0 partial"
+      },
+      {
+        "id": "mh7",
+        "A": "3/3 ok, 0 partial",
+        "C": "3/3 ok, 0 partial"
+      },
+      {
+        "id": "mh8",
+        "A": "0/3 ok, 3 partial",
+        "C": "2/3 ok, 1 partial"
+      },
+      {
+        "id": "mh9",
+        "A": "3/3 ok, 0 partial",
+        "C": "3/3 ok, 0 partial"
+      },
+      {
+        "id": "mh10",
+        "A": "3/3 ok, 0 partial",
+        "C": "3/3 ok, 0 partial"
+      },
+      {
+        "id": "mh11",
+        "A": "0/3 ok, 3 partial",
+        "C": "1/3 ok, 2 partial"
+      },
+      {
+        "id": "mh12",
+        "A": "0/3 ok, 3 partial",
+        "C": "3/3 ok, 0 partial"
+      }
+    ],
+    "raw": [
+      {
+        "id": "mh1",
+        "kind": "multihop",
+        "strategy": "A",
+        "pass": 1,
+        "insufficient": false,
+        "verdict": "partial",
+        "reason": "It correctly identifies MPWR/Delta and the multi-hop structure through data centers to electricity generators, but names the wrong bridge entities (GE Vernova/Hitachi Energy transformers) instead of the gold's essential power-distribution/racks bridge (Schneider, Eaton) and omits the energy-grid/utilities-IPP framing."
+      },
+      {
+        "id": "mh1",
+        "kind": "multihop",
+        "strategy": "A",
+        "pass": 2,
+        "insufficient": false,
+        "verdict": "incorrect",
+        "reason": "The candidate names the correct chip makers (MPWR/Delta) but identifies the wrong bridge path — it cites transformer/grid-infrastructure vendors (GE Vernova, Hitachi Energy) instead of the gold's required bridges (power-distribution/Schneider-Eaton, datacenter-buildout, energy-grid reaching utilities and IPPs), and it omits the actual generator endpoints (regulated utilities, IPPs/merchant power)."
+      },
+      {
+        "id": "mh1",
+        "kind": "multihop",
+        "strategy": "A",
+        "pass": 3,
+        "insufficient": false,
+        "verdict": "incorrect",
+        "reason": "It names the chip makers correctly but invents a GE Vernova/Hitachi Energy transformer path instead of the gold's power-distribution (Schneider/Eaton), datacenter-buildout, and energy-grid bridges, and fails to reach the utility/IPP generator endpoints."
+      },
+      {
+        "id": "mh1",
+        "kind": "multihop",
+        "strategy": "C",
+        "pass": 1,
+        "insufficient": false,
+        "verdict": "partial",
+        "reason": "It captures the multi-hop path through datacenter buildout and energy/grid to IPPs/merchant generators, but misidentifies the power-management chip makers as ASPEED/BMC instead of MPWR/Delta/Vicor and omits the essential power-distribution bridge (Schneider, Eaton)."
+      },
+      {
+        "id": "mh1",
+        "kind": "multihop",
+        "strategy": "C",
+        "pass": 2,
+        "insufficient": true,
+        "verdict": "incorrect",
+        "reason": "The candidate declares the pack insufficient and never traces the gold's multi-hop bridge path (power-distribution/Schneider-Eaton, datacenter-buildout, energy-grid) from power-management chips (MPWR/Delta/Vicor) to generators, so it fails to answer the question."
+      },
+      {
+        "id": "mh1",
+        "kind": "multihop",
+        "strategy": "C",
+        "pass": 3,
+        "insufficient": false,
+        "verdict": "incorrect",
+        "reason": "The candidate invents an ASPEED/BMC-based chain and never names the gold's power-management chips (MPWR/Vicor/Delta) or the essential bridge entities (power-distribution Schneider/Eaton, datacenter buildout, energy-grid) connecting them to generators; it builds a wrong path and wrong endpoints."
+      },
+      {
+        "id": "mh2",
+        "kind": "multihop",
+        "strategy": "A",
+        "pass": 1,
+        "insufficient": false,
+        "verdict": "correct",
+        "reason": "The answer conveys the full litho->foundry->GPU->server path and names every key gold entity (ASML/EUV, TSMC, NVIDIA GPUs, compute chips, and enterprise AI servers including Dell/SMCI/HPE)."
+      },
+      {
+        "id": "mh2",
+        "kind": "multihop",
+        "strategy": "A",
+        "pass": 2,
+        "insufficient": false,
+        "verdict": "correct",
+        "reason": "The answer conveys the full litho->foundry->GPU->server chain and names all key bridge entities (ASML EUV, TSMC foundry, NVIDIA GPUs, the compute chips, and enterprise servers via Dell/SMCI/HPE), matching the gold path."
+      },
+      {
+        "id": "mh2",
+        "kind": "multihop",
+        "strategy": "A",
+        "pass": 3,
+        "insufficient": false,
+        "verdict": "correct",
+        "reason": "The answer conveys the full litho->foundry->GPU->server path and names every key gold entity (ASML/EUV, TSMC foundry, NVIDIA GPUs, compute chips, and enterprise OEMs Dell/Super Micro/HPE), correctly bridging the ASML-to-server endpoints."
+      },
+      {
+        "id": "mh2",
+        "kind": "multihop",
+        "strategy": "C",
+        "pass": 1,
+        "insufficient": false,
+        "verdict": "correct",
+        "reason": "The answer conveys the full litho->foundry->GPU->server path and names all key gold bridge entities (ASML EUV, TSMC foundry, NVIDIA GPU/compute chips, and Dell/SMCI/HPE enterprise servers), with the ODM hop included as extra detail."
+      },
+      {
+        "id": "mh2",
+        "kind": "multihop",
+        "strategy": "C",
+        "pass": 2,
+        "insufficient": false,
+        "verdict": "correct",
+        "reason": "The answer conveys the full ASML EUV -> TSMC foundry -> NVIDIA GPU -> enterprise AI server (Dell/SMCI/HPE) chain, naming every essential bridge entity from the gold key."
+      },
+      {
+        "id": "mh2",
+        "kind": "multihop",
+        "strategy": "C",
+        "pass": 3,
+        "insufficient": false,
+        "verdict": "correct",
+        "reason": "The answer conveys the full litho->foundry->GPU->server path and names every key gold entity (ASML EUV monopoly, TSMC leading-edge foundry, NVIDIA GPUs, compute chips, and Dell/SMCI/HPE enterprise servers), with extra ODM detail being harmless."
+      },
+      {
+        "id": "mh3",
+        "kind": "multihop",
+        "strategy": "A",
+        "pass": 1,
+        "insufficient": false,
+        "verdict": "partial",
+        "reason": "It correctly captures the substrate/Ajinomoto chokepoint and names TSMC as the two-hop bridge to NVDA, but it substitutes its own SPOFs (Lasertec, Lumentum) and misses the gold's essential upstream chokepoints — ASML/EUV monopoly, wafers/critical metals, and specialty gases — so it only half-answers the canonical multi-hop path."
+      },
+      {
+        "id": "mh3",
+        "kind": "multihop",
+        "strategy": "A",
+        "pass": 2,
+        "insufficient": false,
+        "verdict": "partial",
+        "reason": "It correctly identifies the SPOF hub (84), TSMC bridge, and the substrate chokepoint (Ajinomoto), but misses the gold's essential upstream material chokepoints—ASML EUV, wafers, and specialty gases—substituting other SPOFs instead."
+      },
+      {
+        "id": "mh3",
+        "kind": "multihop",
+        "strategy": "A",
+        "pass": 3,
+        "insufficient": false,
+        "verdict": "partial",
+        "reason": "It correctly anchors the SPOF hub and the TSMC two-hop path and names the substrate/Ajinomoto chokepoint, but misses the gold's essential upstream material chokepoints (ASML EUV monopoly, wafers, specialty gases) and substitutes other suppliers instead."
+      },
+      {
+        "id": "mh3",
+        "kind": "multihop",
+        "strategy": "C",
+        "pass": 1,
+        "insufficient": false,
+        "verdict": "partial",
+        "reason": "It names some right bridge entities (TSMC, SK Hynix, substrate/Ajinomoto) but misses the gold's essential upstream chokepoints — ASML EUV, wafers/critical metals, and specialty gases — and never conveys the two-hops-upstream material-chokepoint relationship."
+      },
+      {
+        "id": "mh3",
+        "kind": "multihop",
+        "strategy": "C",
+        "pass": 2,
+        "insufficient": false,
+        "verdict": "partial",
+        "reason": "Candidate correctly names TSMC, SK Hynix, and Ajinomoto/substrate as bridge nodes, but misses the essential upstream material chokepoints the question targets — ASML's EUV monopoly, wafers/critical metals, and specialty gases — substituting Lumentum instead."
+      },
+      {
+        "id": "mh3",
+        "kind": "multihop",
+        "strategy": "C",
+        "pass": 3,
+        "insufficient": false,
+        "verdict": "partial",
+        "reason": "It names TSMC, SK Hynix, and Ajinomoto/substrate correctly, but omits ASML's EUV monopoly and the upstream material chokepoints (wafers, specialty gases, critical metals) that are the essential point of the gold answer."
+      },
+      {
+        "id": "mh4",
+        "kind": "multihop",
+        "strategy": "A",
+        "pass": 1,
+        "insufficient": false,
+        "verdict": "partial",
+        "reason": "The candidate correctly names Cooling, the datacenter buildout, and the AI server assemblers (SMCI/Dell/HPE), but identifies the rack neighbor as \"power distribution + racks — Schneider/Eaton/ABB\" rather than the gold's intended sibling power-management subsystem (MPWR, Delta, Vicor) that is co-located but not lexically tied to cooling, so it misses the essential bridge entity for the \"what does cooling sit next to\" half."
+      },
+      {
+        "id": "mh4",
+        "kind": "multihop",
+        "strategy": "A",
+        "pass": 2,
+        "insufficient": false,
+        "verdict": "correct",
+        "reason": "The candidate correctly states cooling (node 48, Vertiv + liquid cooling) attaches to the datacenter buildout, names the dependents (Dell/SMCI enterprise AI servers, plus NVDA/Vera Rubin GPU platform), and identifies the rack co-located sibling (power distribution — Schneider/Eaton/ABB), matching the gold's path and key bridge entities."
+      },
+      {
+        "id": "mh4",
+        "kind": "multihop",
+        "strategy": "A",
+        "pass": 3,
+        "insufficient": false,
+        "verdict": "partial",
+        "reason": "The candidate correctly answers the dependency half (NVDA GPU platforms, Dell/SMCI servers, neoclouds depending on liquid cooling) and names Cooling and the Datacenter buildout node, but for \"what cooling sits next to\" it cites power distribution/racks (Schneider, Eaton, ABB) rather than the gold's intended sibling power-management subsystem (MPWR, Delta, Vicor), missing that essential bridge entity."
+      },
+      {
+        "id": "mh4",
+        "kind": "multihop",
+        "strategy": "C",
+        "pass": 1,
+        "insufficient": false,
+        "verdict": "correct",
+        "reason": "It correctly identifies that AI servers (Dell/SMCI/HPE) and NVIDIA GPU rack platforms depend on liquid cooling, and that cooling (Vertiv, node 48) sits next to power distribution/racks in the datacenter buildout, naming the key bridge entities; only the lexically-distant power-management suppliers (MPWR/Delta/Vicor) are unstated, which is a non-essential secondary point."
+      },
+      {
+        "id": "mh4",
+        "kind": "multihop",
+        "strategy": "C",
+        "pass": 2,
+        "insufficient": false,
+        "verdict": "partial",
+        "reason": "Gets the dependency side right (AI servers/NVDA/Dell/SMCI depend on Vertiv liquid cooling within the datacenter buildout), but for what cooling sits next to it names Schneider/Eaton/ABB power distribution rather than the gold's sibling power-management subsystem (MPWR, Delta, Vicor), missing that essential bridge entity."
+      },
+      {
+        "id": "mh4",
+        "kind": "multihop",
+        "strategy": "C",
+        "pass": 3,
+        "insufficient": false,
+        "verdict": "partial",
+        "reason": "The dependency side is right (Dell/SMCI/HPE AI server racks and NVDA GPUs depend on liquid cooling via Vertiv), but the \"what cooling sits next to in the rack\" answer names power distribution + racks (Schneider/Eaton/ABB) instead of the gold's sibling power-management subsystem (MPWR, Delta, Vicor), missing the essential bridge entity."
+      },
+      {
+        "id": "mh5",
+        "kind": "multihop",
+        "strategy": "A",
+        "pass": 1,
+        "insufficient": false,
+        "verdict": "correct",
+        "reason": "The answer conveys the full uranium→nuclear→energy/grid→IPPs/utilities→datacenter traversal and names the essential bridge entities (Cameco miners, nuclear/SMRs, IPPs Constellation/Vistra, regulated utilities serving DCs, grid), matching the gold path."
+      },
+      {
+        "id": "mh5",
+        "kind": "multihop",
+        "strategy": "A",
+        "pass": 2,
+        "insufficient": false,
+        "verdict": "correct",
+        "reason": "It traces the full fuel->power->datacenter path through uranium miners (Cameco), nuclear/SMRs, IPPs/merchant power and regulated utilities serving DCs, naming the key bridge entities; extra enrichment detail doesn't detract from the correct core connection."
+      },
+      {
+        "id": "mh5",
+        "kind": "multihop",
+        "strategy": "A",
+        "pass": 3,
+        "insufficient": false,
+        "verdict": "correct",
+        "reason": "It conveys the uranium->nuclear fuel->IPP/utility power->datacenter traversal and names the essential gold bridge entities (Cameco uranium miners, IPPs like Constellation/Vistra, regulated utility Dominion), with HALEU/Centrus as an extra non-conflicting hop."
+      },
+      {
+        "id": "mh5",
+        "kind": "multihop",
+        "strategy": "C",
+        "pass": 1,
+        "insufficient": false,
+        "verdict": "correct",
+        "reason": "The answer conveys the full fuel→power→datacenter traversal and names the essential gold bridge entities (Uranium/Cameco miners, nuclear, IPPs/merchant power CEG-VST, energy & grid, utilities, and datacenter buildout), with HALEU/enrichment and DC REITs as acceptable additional detail."
+      },
+      {
+        "id": "mh5",
+        "kind": "multihop",
+        "strategy": "C",
+        "pass": 2,
+        "insufficient": false,
+        "verdict": "correct",
+        "reason": "It traces the full fuel->power->datacenter path naming uranium miners (Cameco), nuclear SMRs (Centrus/HALEU, IPPs Constellation and Vistra), regulated utilities (Dominion, Oncor), the grid, and datacenter physical buildout, hitting all essential bridge entities."
+      },
+      {
+        "id": "mh5",
+        "kind": "multihop",
+        "strategy": "C",
+        "pass": 3,
+        "insufficient": false,
+        "verdict": "correct",
+        "reason": "It traces the full fuel->power->datacenter path naming Cameco (uranium miners), nuclear/SMRs, IPPs/merchant power (Constellation, Vistra), regulated utilities serving DCs (Dominion), the grid, and datacenter buildout (DLR/EQIX), capturing all essential bridge entities and the core multi-hop connection."
+      },
+      {
+        "id": "mh6",
+        "kind": "multihop",
+        "strategy": "A",
+        "pass": 1,
+        "insufficient": false,
+        "verdict": "correct",
+        "reason": "It conveys the multi-hop path linking HBM makers (SK Hynix, Samsung, Micron) through foundry (TSMC, Samsung Foundry) and advanced packaging/OSAT (CoWoS, ASE, Amkor) to the GPU/accelerator, naming the essential bridge entities; only the secondary substrate/BMC endpoint is missing."
+      },
+      {
+        "id": "mh6",
+        "kind": "multihop",
+        "strategy": "A",
+        "pass": 2,
+        "insufficient": false,
+        "verdict": "correct",
+        "reason": "The answer conveys the multi-hop path (HBM makers depend on foundries for logic base dies and on advanced packaging/CoWoS to co-package with NVIDIA GPUs via OSAT) and names all key bridge entities (SK Hynix, Micron, Samsung, TSMC, NVIDIA, OSAT/advanced packaging), missing only the secondary substrate/BMC detail which does not undermine the core connection."
+      },
+      {
+        "id": "mh6",
+        "kind": "multihop",
+        "strategy": "A",
+        "pass": 3,
+        "insufficient": false,
+        "verdict": "correct",
+        "reason": "It names the HBM makers (SK Hynix, Micron, Samsung), the foundry (TSMC), GPU/accelerator endpoints (NVIDIA), and OSAT/advanced packaging via CoWoS, correctly conveying the multi-hop integration path; missing only the substrate/BMC secondary detail, which is acceptable."
+      },
+      {
+        "id": "mh6",
+        "kind": "multihop",
+        "strategy": "C",
+        "pass": 1,
+        "insufficient": false,
+        "verdict": "correct",
+        "reason": "It names all three HBM makers (SK Hynix, Micron, Samsung), the foundry (TSMC/Samsung Foundry), NVIDIA as the integrating GPU customer, and advanced packaging (CoWoS/OSAT), correctly tracing the multi-hop HBM→foundry→packaging→accelerator path; only substrate/BMC vendors are omitted, which is a secondary miss."
+      },
+      {
+        "id": "mh6",
+        "kind": "multihop",
+        "strategy": "C",
+        "pass": 2,
+        "insufficient": false,
+        "verdict": "correct",
+        "reason": "It conveys the multi-hop path connecting HBM makers (SK Hynix, Samsung, Micron) to the foundry (TSMC/Samsung Foundry) and advanced packaging (CoWoS) via the GPU (NVIDIA), naming the essential bridge entities; only the substrate/BMC suppliers are omitted, which is a secondary detail."
+      },
+      {
+        "id": "mh6",
+        "kind": "multihop",
+        "strategy": "C",
+        "pass": 3,
+        "insufficient": false,
+        "verdict": "correct",
+        "reason": "It names all three HBM makers (SK Hynix, Samsung, Micron), the GPU/NVIDIA endpoint, TSMC as the foundry, and advanced (CoWoS 2.5D) packaging as the integration hub, conveying the multi-hop co-packaging path; only the substrate/BMC suppliers (a secondary entity) are omitted."
+      },
+      {
+        "id": "mh7",
+        "kind": "multihop",
+        "strategy": "A",
+        "pass": 1,
+        "insufficient": false,
+        "verdict": "correct",
+        "reason": "The answer names every key gold entity (networking & interconnect umbrella, switching silicon Broadcom/Marvell, optical Coherent/Lumentum, fabric Arista + NVDA Spectrum-X, Astera scale-up, AECs Credo/MACOM, DPUs/SmartNICs) and correctly conveys the family structure clustering under networking with DPUs and switching silicon included."
+      },
+      {
+        "id": "mh7",
+        "kind": "multihop",
+        "strategy": "A",
+        "pass": 2,
+        "insufficient": false,
+        "verdict": "correct",
+        "reason": "The answer names every key gold entity and bridge node — networking umbrella, switching silicon (Broadcom, Marvell), optical (Coherent, Lumentum), fabric (Arista + Spectrum-X), Astera Labs scale-up, active electrical cables (Credo), and DPUs/SmartNICs — correctly conveying the full interconnect family."
+      },
+      {
+        "id": "mh7",
+        "kind": "multihop",
+        "strategy": "A",
+        "pass": 3,
+        "insufficient": false,
+        "verdict": "correct",
+        "reason": "The answer correctly clusters the full interconnect family under networking and names every key gold entity and bridge node — switching silicon (Broadcom, Marvell), fabric (Arista, Spectrum-X), Astera Labs scale-up fabric, optical (Coherent, Lumentum), active electrical cables (Credo, MACOM), and DPUs/SmartNICs — with accurate relationships."
+      },
+      {
+        "id": "mh7",
+        "kind": "multihop",
+        "strategy": "C",
+        "pass": 1,
+        "insufficient": false,
+        "verdict": "correct",
+        "reason": "The answer names all key gold entities and bridge nodes (networking/interconnect umbrella, switching silicon Broadcom/Marvell, fabric Arista + NVDA Spectrum-X, Astera Labs scale-up, optical Coherent/Lumentum, AECs Credo/MACOM, DPUs/SmartNICs) and correctly conveys the layered interconnect family clustering under networking with DPUs sitting via switching silicon."
+      },
+      {
+        "id": "mh7",
+        "kind": "multihop",
+        "strategy": "C",
+        "pass": 2,
+        "insufficient": false,
+        "verdict": "correct",
+        "reason": "The candidate names all key gold entities and bridge nodes — networking/interconnect family, switching silicon (Broadcom, Marvell), optical (Coherent, Lumentum), fabric (Arista + Spectrum-X), Astera Labs scale-up fabric, active electrical cables (Credo, MACOM), and DPUs/SmartNICs — and correctly conveys the layered clustering under networking with the scale-up/switching relationships."
+      },
+      {
+        "id": "mh7",
+        "kind": "multihop",
+        "strategy": "C",
+        "pass": 3,
+        "insufficient": false,
+        "verdict": "correct",
+        "reason": "The answer names every gold entity and relationship — switching silicon (Broadcom/Marvell), optical (Coherent/Lumentum), fabric (Arista + Spectrum-X), Astera Labs scale-up fabric, AECs (Credo/MACOM), and DPUs/SmartNICs — all clustered correctly under networking/interconnect with DPUs tied to switching silicon."
+      },
+      {
+        "id": "mh8",
+        "kind": "multihop",
+        "strategy": "A",
+        "pass": 1,
+        "insufficient": false,
+        "verdict": "partial",
+        "reason": "It correctly establishes the TSMC bridge connecting Taiwan/China geopolitics to NVDA, but misses most of the gold's exposed chokepoint neighbors (ASML/EUV, wafers + critical metals, OSAT/advanced packaging beyond CoWoS, China domestic AI stack), so the blast-radius path is only partially conveyed."
+      },
+      {
+        "id": "mh8",
+        "kind": "multihop",
+        "strategy": "A",
+        "pass": 2,
+        "insufficient": false,
+        "verdict": "partial",
+        "reason": "The candidate nails the essential path (China/Taiwan geopolitics → TSMC → NVDA) and covers packaging/CoWoS, but it misses several of the gold's exposed-chokepoint neighbors central to the blast-radius framing — ASML/EUV, wafers + critical metals, and the China domestic AI stack."
+      },
+      {
+        "id": "mh8",
+        "kind": "multihop",
+        "strategy": "A",
+        "pass": 3,
+        "insufficient": false,
+        "verdict": "partial",
+        "reason": "It correctly conveys the core path (Taiwan/China risk → TSMC → NVDA) and the China-policy channel, but misses essential gold bridge chokepoints — ASML/EUV, wafers + critical metals, and the OSAT packaging node — so the blast-radius traversal is incomplete."
+      },
+      {
+        "id": "mh8",
+        "kind": "multihop",
+        "strategy": "C",
+        "pass": 1,
+        "insufficient": false,
+        "verdict": "correct",
+        "reason": "The answer conveys the essential path (Taiwan/China geopolitical risk reaching NVDA via TSMC as the structural chokepoint) and names the key bridge entity TSMC plus critical metals/wafers and packaging (CoWoS), with only secondary chokepoints like ASML's EUV monopoly and the China domestic AI stack missing."
+      },
+      {
+        "id": "mh8",
+        "kind": "multihop",
+        "strategy": "C",
+        "pass": 2,
+        "insufficient": false,
+        "verdict": "partial",
+        "reason": "It correctly connects Taiwan/China geopolitics to NVDA via TSMC and names wafers/critical metals, but omits essential gold bridge nodes (ASML/EUV lithography, OSAT advanced packaging as a category, and the China domestic AI stack), giving only a partial blast-radius path."
+      },
+      {
+        "id": "mh8",
+        "kind": "multihop",
+        "strategy": "C",
+        "pass": 3,
+        "insufficient": false,
+        "verdict": "correct",
+        "reason": "The answer nails the essential path (Taiwan/China geopolitics → TSMC → NVDA) and names the central bridge entity TSMC plus several chokepoints (CoWoS/advanced packaging, wafers/critical metals); it omits ASML/EUV and the China AI stack, but those are secondary neighbors and the core multi-hop connection is correct."
+      },
+      {
+        "id": "mh9",
+        "kind": "multihop",
+        "strategy": "A",
+        "pass": 1,
+        "insufficient": false,
+        "verdict": "correct",
+        "reason": "It conveys the server-to-BOM decomposition and names most key gold suppliers (Dell/SMCI/HPE, SK Hynix HBM, Vertiv cooling, Delta/Vicor power, ASPEED BMC, PCB/substrate), missing only secondary entities like connectors and ODMs."
+      },
+      {
+        "id": "mh9",
+        "kind": "multihop",
+        "strategy": "A",
+        "pass": 2,
+        "insufficient": false,
+        "verdict": "correct",
+        "reason": "It conveys the server-BOM relationship and names the key gold suppliers (Dell/SMCI/HPE, SK Hynix HBM, ASPEED BMC, Delta/Vicor power, Vertiv cooling); it omits connectors, ODMs, and substrate suppliers, but missing secondary entities still leaves the core path and answer right."
+      },
+      {
+        "id": "mh9",
+        "kind": "multihop",
+        "strategy": "A",
+        "pass": 3,
+        "insufficient": false,
+        "verdict": "correct",
+        "reason": "It conveys the server-to-Dell-BOM-node path (66→164) and names the essential gold suppliers across layers — SK Hynix (HBM), Vertiv (cooling), Delta/Vicor (power), ASPEED (BMC), substrate/PCB, with Dell/SMCI/HPE as integrators — so the core relationship and key entities are correct despite missing a few secondary names (connectors vendors, ODMs)."
+      },
+      {
+        "id": "mh9",
+        "kind": "multihop",
+        "strategy": "C",
+        "pass": 1,
+        "insufficient": false,
+        "verdict": "correct",
+        "reason": "It conveys the Dell AI server BOM decomposition (node 164 off server node 66) and names the essential gold suppliers across categories — Dell/SMCI/HPE assemblers, SK Hynix HBM, Vicor/Delta power, ASPEED BMC, Vertiv cooling, plus substrate/PCB and connector-class suppliers — missing only minor secondary entities (Amphenol/Ajinomoto), which still qualifies as correct."
+      },
+      {
+        "id": "mh9",
+        "kind": "multihop",
+        "strategy": "C",
+        "pass": 2,
+        "insufficient": false,
+        "verdict": "correct",
+        "reason": "The answer correctly traces the server's BOM upstream and names the key gold entities (Dell server, SK Hynix HBM, Vertiv cooling, Delta/Vicor power, ASPEED BMC, substrate/PCB suppliers), capturing the essential path and bridge nodes even if it adds extras and omits a couple of secondary names like Amphenol connectors."
+      },
+      {
+        "id": "mh9",
+        "kind": "multihop",
+        "strategy": "C",
+        "pass": 3,
+        "insufficient": false,
+        "verdict": "correct",
+        "reason": "It correctly conveys the server-to-Dell-BOM decomposition and names the essential gold entities (Dell/SMCI/HPE, SK Hynix HBM, ASPEED BMC, Vertiv cooling, Delta/Vicor power, PCB/substrate), missing only secondary entities (connectors, ODMs)."
+      },
+      {
+        "id": "mh10",
+        "kind": "multihop",
+        "strategy": "A",
+        "pass": 1,
+        "insufficient": false,
+        "verdict": "correct",
+        "reason": "It traces the full demand→power→nuclear→fuel chain naming AI labs (OpenAI, Anthropic, xAI), the power/PPA bridge, SMRs (Oklo, NuScale, BWXT), and HALEU enrichment (Centrus); only the uranium-miner secondary node is omitted, which doesn't break the core path."
+      },
+      {
+        "id": "mh10",
+        "kind": "multihop",
+        "strategy": "A",
+        "pass": 2,
+        "insufficient": false,
+        "verdict": "correct",
+        "reason": "It traces the full chain from AI labs (OpenAI, Anthropic, xAI) through power demand/merchant PPAs to nuclear SMRs (Oklo) and HALEU enrichment (Centrus), naming the essential bridge entities; missing only minor secondaries like uranium miners/Cameco."
+      },
+      {
+        "id": "mh10",
+        "kind": "multihop",
+        "strategy": "A",
+        "pass": 3,
+        "insufficient": false,
+        "verdict": "correct",
+        "reason": "The answer traces the full 3-hop chain (AI labs OpenAI/Anthropic/xAI → power demand/PPAs → SMRs Oklo/NuScale/BWXT → HALEU enrichment via Centrus) naming the essential bridge entities, satisfying the gold's path even though uranium miners/URENCO are only minor omissions."
+      },
+      {
+        "id": "mh10",
+        "kind": "multihop",
+        "strategy": "C",
+        "pass": 1,
+        "insufficient": false,
+        "verdict": "correct",
+        "reason": "The answer traces the full demand→power→fuel chain through all essential bridge entities (AI labs, energy/grid, nuclear SMRs/Oklo, HALEU enrichment/Centrus, uranium/Cameco/NXE), matching the gold's core relationship and key entities."
+      },
+      {
+        "id": "mh10",
+        "kind": "multihop",
+        "strategy": "C",
+        "pass": 2,
+        "insufficient": false,
+        "verdict": "correct",
+        "reason": "The answer conveys the full demand->power->fuel chain (AI labs/OpenAI/Anthropic/xAI -> Energy & grid -> Nuclear SMRs/Oklo -> HALEU/Centrus + Uranium/Cameco/NXE) with all essential bridge entities, only missing the secondary merchant-power/IPP framing and a couple minor names (Mistral, NuScale/BWXT, URENCO), which does not undermine the core connection."
+      },
+      {
+        "id": "mh10",
+        "kind": "multihop",
+        "strategy": "C",
+        "pass": 3,
+        "insufficient": false,
+        "verdict": "correct",
+        "reason": "It conveys the full demand→power→fuel chain and names the essential gold entities (AI labs OpenAI/Anthropic/xAI, merchant/grid power demand, SMRs Oklo/NuScale/BWXT, HALEU/Centrus enrichment, uranium miners Cameco/NXE), missing only the minor Mistral/URENCO secondaries."
+      },
+      {
+        "id": "mh11",
+        "kind": "multihop",
+        "strategy": "A",
+        "pass": 1,
+        "insufficient": true,
+        "verdict": "partial",
+        "reason": "The candidate constructs a plausible uranium→SMR→data-center→GPU path and correctly cites uranium miners (Cameco) and NVDA GPU dominance, but misses the gold's essential bridge entities (energy grid → AI neoclouds: CoreWeave, Crusoe, Lambda), instead routing through SMR/HALEU nodes, and declares the pack insufficient rather than completing the link-walk."
+      },
+      {
+        "id": "mh11",
+        "kind": "multihop",
+        "strategy": "A",
+        "pass": 2,
+        "insufficient": true,
+        "verdict": "partial",
+        "reason": "The candidate names the right endpoint entities (NVDA GPU, Cameco uranium) and even constructs a plausible energy/SMR chain, but it declares the pack insufficient and omits the essential AI-neocloud bridge (CoreWeave/Crusoe/Lambda) that links datacenter power to GPUs, so it only half-answers the multi-hop path."
+      },
+      {
+        "id": "mh11",
+        "kind": "multihop",
+        "strategy": "A",
+        "pass": 3,
+        "insufficient": false,
+        "verdict": "partial",
+        "reason": "The candidate correctly connects uranium (Cameco) to NVDA GPUs via energy/AI data centers and names the right endpoints, but misses the gold's essential bridge entity — the AI neocloud datacenters (CoreWeave, Crusoe, Lambda) — substituting SMR/HALEU vendors and hyperscalers instead."
+      },
+      {
+        "id": "mh11",
+        "kind": "multihop",
+        "strategy": "C",
+        "pass": 1,
+        "insufficient": false,
+        "verdict": "partial",
+        "reason": "It captures the uranium→energy→datacenter→NVDA path and names uranium miners (Cameco, NXE) and NVDA GPU dominance, but omits the essential neocloud bridge entities (CoreWeave, Crusoe, Lambda) that the gold key requires for the middle hop."
+      },
+      {
+        "id": "mh11",
+        "kind": "multihop",
+        "strategy": "C",
+        "pass": 2,
+        "insufficient": false,
+        "verdict": "correct",
+        "reason": "It conveys the essential multi-hop path (uranium fuel -> nuclear electricity/grid -> AI datacenters -> NVDA GPUs) and names key gold entities (Cameco, uranium miners, NVDA GPU dominance), with only the specific neocloud names missing as a secondary omission."
+      },
+      {
+        "id": "mh11",
+        "kind": "multihop",
+        "strategy": "C",
+        "pass": 3,
+        "insufficient": false,
+        "verdict": "partial",
+        "reason": "It correctly names the uranium (Cameco) and NVDA GPU endpoints and conveys the \"nuclear power feeds AI data centers\" relationship, but it misses the essential neocloud datacenter bridge entities (CoreWeave, Crusoe, Lambda) and the energy-grid hop, substituting an SMR/HALEU chain instead."
+      },
+      {
+        "id": "mh12",
+        "kind": "multihop",
+        "strategy": "A",
+        "pass": 1,
+        "insufficient": false,
+        "verdict": "partial",
+        "reason": "It correctly identifies the two scaling subsystems (power delivery and cooling) and names some right entities (MPWR, Delta, NVDA GPU, power management node 156), but it misstates the connection as a single shared supplier (Delta) rather than the gold's path through the datacenter-buildout and GPU hubs, and omits the buildout bridge node."
+      },
+      {
+        "id": "mh12",
+        "kind": "multihop",
+        "strategy": "A",
+        "pass": 2,
+        "insufficient": false,
+        "verdict": "partial",
+        "reason": "The candidate correctly identifies the two scaling subsystems (power delivery and liquid cooling) but gives the wrong connection: it routes them through Delta Electronics as a shared supplier rather than through the gold's bridge hubs (datacenter physical buildout and GPU/NVDA dominance), missing the essential bridge entities."
+      },
+      {
+        "id": "mh12",
+        "kind": "multihop",
+        "strategy": "A",
+        "pass": 3,
+        "insufficient": false,
+        "verdict": "partial",
+        "reason": "The candidate names the right two subsystems (power delivery and cooling) but mischaracterizes the connection: the gold says they are sibling subsystems linked only through the datacenter-buildout and GPU hubs, whereas the candidate claims they connect via a single shared node/supplier (Delta), missing the essential bridge structure."
+      },
+      {
+        "id": "mh12",
+        "kind": "multihop",
+        "strategy": "C",
+        "pass": 1,
+        "insufficient": false,
+        "verdict": "correct",
+        "reason": "The candidate names both sibling subsystems (cooling node 48 — Vertiv/liquid cooling, and power node 156/49 — MPWR/Delta/Vicor/Schneider/Eaton) and explains they scale together with GPU power density, matching the gold's essential entities and relationship."
+      },
+      {
+        "id": "mh12",
+        "kind": "multihop",
+        "strategy": "C",
+        "pass": 2,
+        "insufficient": false,
+        "verdict": "correct",
+        "reason": "The candidate names both scaling rack subsystems (cooling — Vertiv/liquid cooling node 48; power delivery — Schneider/Eaton node 49, MPWR/Delta/Vicor node 156) and all key gold entities, capturing the sibling-subsystem relationship."
+      },
+      {
+        "id": "mh12",
+        "kind": "multihop",
+        "strategy": "C",
+        "pass": 3,
+        "insufficient": false,
+        "verdict": "correct",
+        "reason": "The answer identifies both scaling rack subsystems (power distribution with Schneider/Eaton and liquid cooling with Vertiv/Delta) tied to rising GPU power, and explains their connection via the shared GPU heat/power root cause, naming the key gold entities (cooling 48, power distribution 49, power management/Delta 156, NVDA GPUs)."
+      },
+      {
+        "id": "dir-q1",
+        "kind": "direct",
+        "strategy": "A",
+        "pass": 1,
+        "insufficient": false,
+        "verdict": "correct",
+        "reason": "Names all three key gold entities — SK Hynix (HBM leader), Micron (US HBM producer), and Samsung (HBM laggard now catching up) — with accurate roles matching the gold key."
+      },
+      {
+        "id": "dir-q1",
+        "kind": "direct",
+        "strategy": "C",
+        "pass": 1,
+        "insufficient": false,
+        "verdict": "correct",
+        "reason": "Names all three key gold entities — SK Hynix (leader), Micron (US #2 producer), and Samsung — with accurate relationships matching the gold's direct supplier answer."
+      },
+      {
+        "id": "dir-q9",
+        "kind": "direct",
+        "strategy": "A",
+        "pass": 1,
+        "insufficient": false,
+        "verdict": "correct",
+        "reason": "The candidate names Vertiv as the primary liquid cooling provider, matching the gold's essential entity, with additional valid participants cited as secondary detail."
+      },
+      {
+        "id": "dir-q9",
+        "kind": "direct",
+        "strategy": "C",
+        "pass": 1,
+        "insufficient": false,
+        "verdict": "correct",
+        "reason": "The candidate names Vertiv as the primary liquid cooling supplier, exactly matching the gold's direct answer (Cooling — Vertiv + liquid cooling), with additional valid supporting entities."
+      },
+      {
+        "id": "dir-q10",
+        "kind": "direct",
+        "strategy": "A",
+        "pass": 1,
+        "insufficient": false,
+        "verdict": "correct",
+        "reason": "The answer directly states ASML holds a monopoly on EUV lithography, exactly matching the gold's canonical answer and key entity."
+      },
+      {
+        "id": "dir-q10",
+        "kind": "direct",
+        "strategy": "C",
+        "pass": 1,
+        "insufficient": false,
+        "verdict": "correct",
+        "reason": "The answer directly names ASML's monopoly on EUV lithography, matching the gold's canonical answer and key entity."
+      },
+      {
+        "id": "dir-q26",
+        "kind": "direct",
+        "strategy": "A",
+        "pass": 1,
+        "insufficient": false,
+        "verdict": "correct",
+        "reason": "Names the key supplier MPWR and secondary gold entity Delta; missing only Vicor, which per the rubric still counts as correct since the core answer and main entities are right."
+      },
+      {
+        "id": "dir-q26",
+        "kind": "direct",
+        "strategy": "C",
+        "pass": 1,
+        "insufficient": false,
+        "verdict": "partial",
+        "reason": "Correctly names MPWR as the power management supplier for GPUs, but misses two of the three gold entities (Delta and Vicor), substituting different competitors instead."
+      },
+      {
+        "id": "dir-q35",
+        "kind": "direct",
+        "strategy": "A",
+        "pass": 1,
+        "insufficient": false,
+        "verdict": "correct",
+        "reason": "The answer correctly identifies EDA chip design software and names all three key gold entities — Cadence, Synopsys, and Ansys."
+      },
+      {
+        "id": "dir-q35",
+        "kind": "direct",
+        "strategy": "C",
+        "pass": 1,
+        "insufficient": false,
+        "verdict": "correct",
+        "reason": "The answer correctly identifies EDA chip design software and names all key gold entities — Cadence, Synopsys, and Ansys — matching the direct answer."
+      },
+      {
+        "id": "dir-q39",
+        "kind": "direct",
+        "strategy": "A",
+        "pass": 1,
+        "insufficient": false,
+        "verdict": "correct",
+        "reason": "The candidate names the gold's key node \"Wafers + critical metals\" and correctly identifies the major silicon wafer suppliers, satisfying the direct-answer requirement."
+      },
+      {
+        "id": "dir-q39",
+        "kind": "direct",
+        "strategy": "C",
+        "pass": 1,
+        "insufficient": false,
+        "verdict": "correct",
+        "reason": "The answer directly identifies the silicon wafer suppliers and explicitly cites the gold node \"Wafers + critical metals,\" satisfying the canonical answer and required entity."
+      }
+    ]
+  },
+  "_comment3_haiku": "2026-06-21 weak-model sweep COMPLETED with Haiku 4.5 (same tight maxNodes=10 packs reused from the Sonnet run; Opus judge fixed; 84 runs, none dropped). SURPRISE: Haiku does NOT replicate the Sonnet win. MH strict A 0.500 vs C 0.472 = TIE/wash (C marginally lower, within the 0.068 std; C 5 incorrect vs A 3 on multihop). Lenient A 0.917 vs C 0.861. Direct tie 0.833/0.833 (no regression). => the C-over-A uplift is NON-MONOTONIC in model strength: Opus (frontier) TIE, Sonnet 4.6 (mid) C +0.166 WIN, Haiku 4.5 (weakest) TIE. The mid-tier is the sweet spot: strong enough to exploit the pre-assembled neighborhood, not already covered by search-only like Opus; Haiku is too weak to exploit the richer 10-node neighborhood and gets DISTRACTED by structurally-close-but-not-lexically-relevant bridge nodes (mh1 C->ASPEED/BMC not MPWR; mh6 C->HBF/Broadcom drift; mh9 C->missed cooling/connectors), so search-only A keeps it on-track about equally often. Ship claim must be scoped: helps capable MID-TIER models on multi-hop; frontier ties; weakest ties (and can occasionally be misled by the richer pack). No regression at any tier on direct.",
+  "weak_model_haiku_tight_maxNodes10": {
+    "answer_model": "haiku",
+    "judge_model": "opus",
+    "maxNodes": 10,
+    "multihop": {
+      "A": {
+        "acc_strict": 0.5,
+        "acc_lenient": 0.917,
+        "perpass": [
+          0.583,
+          0.417,
+          0.5
+        ],
+        "std": 0.068,
+        "n": 36
+      },
+      "C": {
+        "acc_strict": 0.472,
+        "acc_lenient": 0.861,
+        "perpass": [
+          0.417,
+          0.5,
+          0.5
+        ],
+        "std": 0.039,
+        "n": 36
+      }
+    },
+    "direct": {
+      "A": {
+        "acc_strict": 0.833,
+        "acc_lenient": 0.833,
+        "n": 6
+      },
+      "C": {
+        "acc_strict": 0.833,
+        "acc_lenient": 1,
+        "n": 6
+      }
+    },
+    "perQuestion_multihop": [
+      {
+        "id": "mh1",
+        "A": "0/3 ok, 3 partial",
+        "C": "0/3 ok, 0 partial"
+      },
+      {
+        "id": "mh2",
+        "A": "3/3 ok, 0 partial",
+        "C": "3/3 ok, 0 partial"
+      },
+      {
+        "id": "mh3",
+        "A": "0/3 ok, 3 partial",
+        "C": "0/3 ok, 3 partial"
+      },
+      {
+        "id": "mh4",
+        "A": "2/3 ok, 1 partial",
+        "C": "2/3 ok, 1 partial"
+      },
+      {
+        "id": "mh5",
+        "A": "3/3 ok, 0 partial",
+        "C": "3/3 ok, 0 partial"
+      },
+      {
+        "id": "mh6",
+        "A": "2/3 ok, 1 partial",
+        "C": "0/3 ok, 3 partial"
+      },
+      {
+        "id": "mh7",
+        "A": "3/3 ok, 0 partial",
+        "C": "3/3 ok, 0 partial"
+      },
+      {
+        "id": "mh8",
+        "A": "1/3 ok, 2 partial",
+        "C": "1/3 ok, 2 partial"
+      },
+      {
+        "id": "mh9",
+        "A": "3/3 ok, 0 partial",
+        "C": "1/3 ok, 2 partial"
+      },
+      {
+        "id": "mh10",
+        "A": "1/3 ok, 2 partial",
+        "C": "3/3 ok, 0 partial"
+      },
+      {
+        "id": "mh11",
+        "A": "0/3 ok, 0 partial",
+        "C": "0/3 ok, 1 partial"
+      },
+      {
+        "id": "mh12",
+        "A": "0/3 ok, 3 partial",
+        "C": "1/3 ok, 2 partial"
+      }
+    ],
+    "raw": [
+      {
+        "id": "mh1",
+        "kind": "multihop",
+        "strategy": "A",
+        "pass": 1,
+        "insufficient": false,
+        "verdict": "partial",
+        "reason": "It correctly names the power-mgmt endpoints (MPWR, Delta, Vicor) and conveys an indirect multi-hop path through grid/datacenter infrastructure, but it substitutes Hitachi Energy/GE Vernova transformers for the gold's essential bridge entities (Schneider/Eaton power distribution + racks, datacenter buildout) and never identifies the generators as utilities/IPPs."
+      },
+      {
+        "id": "mh1",
+        "kind": "multihop",
+        "strategy": "A",
+        "pass": 2,
+        "insufficient": true,
+        "verdict": "partial",
+        "reason": "Candidate correctly names the power-mgmt chips (MPWR, Delta) but routes the connection through the wrong bridge entities (Hitachi Energy/GE Vernova transformers, HVDC) rather than the gold's power-distribution (Schneider/Eaton), datacenter-buildout, and energy-grid bridges, and never names regulated utilities or IPPs."
+      },
+      {
+        "id": "mh1",
+        "kind": "multihop",
+        "strategy": "A",
+        "pass": 3,
+        "insufficient": false,
+        "verdict": "partial",
+        "reason": "It correctly names the power-mgmt chip makers (MPWR, Delta, Vicor) and traces a path through datacenter power distribution and the energy grid, but it omits the generator endpoints (regulated utilities and IPPs/merchant power) and substitutes transformer vendors for the distribution/racks bridge, so it only half-answers which companies actually generate the electricity."
+      },
+      {
+        "id": "mh1",
+        "kind": "multihop",
+        "strategy": "C",
+        "pass": 1,
+        "insufficient": false,
+        "verdict": "incorrect",
+        "reason": "The gold answer requires power-management chips (MPWR, Delta, Vicor) reaching generators (utilities, IPPs) through the power-distribution (Schneider, Eaton), datacenter-buildout, and energy-grid bridges; the candidate instead describes a BMC/server-management chip (ASPEED) connecting via transformers (GE Vernova, Hitachi Energy), naming none of the gold's chipmakers, distribution-rack vendors, or the IPP/utility endpoints, so it identifies the wrong entities and bridge path."
+      },
+      {
+        "id": "mh1",
+        "kind": "multihop",
+        "strategy": "C",
+        "pass": 2,
+        "insufficient": false,
+        "verdict": "incorrect",
+        "reason": "The candidate names entirely different entities (ASPEED/BMC, GE Vernova, Hitachi Energy, nuclear restarts) instead of the gold's power-management chips (MPWR/Delta/Vicor) and the required bridge nodes (Schneider/Eaton power distribution, datacenter buildout, energy-grid leading to utilities/IPPs), so it neither conveys the gold's multi-hop path nor names its key entities."
+      },
+      {
+        "id": "mh1",
+        "kind": "multihop",
+        "strategy": "C",
+        "pass": 3,
+        "insufficient": false,
+        "verdict": "incorrect",
+        "reason": "The candidate routes the connection through transformer/gas-turbine makers (GE Vernova, Hitachi) and specialty alloys (Howmet, Carpenter), naming none of the gold's required bridge entities (power distribution + racks/Schneider/Eaton, datacenter buildout, energy-grid), neither endpoint (power-mgmt chips MPWR/Delta/Vicor nor utilities/IPPs), so it answers a different question with the wrong entities."
+      },
+      {
+        "id": "mh2",
+        "kind": "multihop",
+        "strategy": "A",
+        "pass": 1,
+        "insufficient": false,
+        "verdict": "correct",
+        "reason": "The answer conveys the full litho->foundry->GPU->server chain and names all key bridge entities (ASML EUV monopoly, TSMC foundry, NVIDIA GPUs/compute chips, and enterprise servers Dell/SMCI/HPE), matching the gold path."
+      },
+      {
+        "id": "mh2",
+        "kind": "multihop",
+        "strategy": "A",
+        "pass": 2,
+        "insufficient": false,
+        "verdict": "correct",
+        "reason": "The candidate traces the full path ASML EUV -> TSMC foundry -> NVIDIA GPU -> Dell AI server, naming all the essential bridge entities and endpoints required by the gold key."
+      },
+      {
+        "id": "mh2",
+        "kind": "multihop",
+        "strategy": "A",
+        "pass": 3,
+        "insufficient": false,
+        "verdict": "correct",
+        "reason": "The answer conveys the full litho->foundry->GPU->server path and names every key gold entity (ASML/EUV, TSMC, NVIDIA GPU, compute chips, and Dell/SMCI/HPE enterprise servers)."
+      },
+      {
+        "id": "mh2",
+        "kind": "multihop",
+        "strategy": "C",
+        "pass": 1,
+        "insufficient": false,
+        "verdict": "correct",
+        "reason": "The answer conveys the full litho->foundry->GPU->server chain and names all key bridge entities (ASML/EUV, TSMC leading-edge nodes, NVIDIA GPU, Dell enterprise AI server), matching the gold's essential path and endpoints."
+      },
+      {
+        "id": "mh2",
+        "kind": "multihop",
+        "strategy": "C",
+        "pass": 2,
+        "insufficient": false,
+        "verdict": "correct",
+        "reason": "The answer conveys the full litho->foundry->GPU->server path and names all key gold entities (ASML EUV monopoly, TSMC leading-edge foundry, NVIDIA GPUs, compute chips, and enterprise servers Dell/SMCI/HPE), correctly bridging the no-shared-vocabulary endpoints via TSMC and the GPU."
+      },
+      {
+        "id": "mh2",
+        "kind": "multihop",
+        "strategy": "C",
+        "pass": 3,
+        "insufficient": false,
+        "verdict": "correct",
+        "reason": "The answer traces the full litho->foundry->GPU->server chain and names every key gold bridge entity (ASML/EUV, TSMC, NVIDIA GPU, and Dell/SMCI/HPE finished servers), matching the gold's essential path."
+      },
+      {
+        "id": "mh3",
+        "kind": "multihop",
+        "strategy": "A",
+        "pass": 1,
+        "insufficient": false,
+        "verdict": "partial",
+        "reason": "It correctly names Ajinomoto/ABF substrate as one upstream SPOF, but misses the essential bridge/chokepoint entities the gold emphasizes (TSMC foundry, ASML EUV monopoly, wafers, specialty gases, SK Hynix/HBM) and the SPOF-hub two-hops-via-TSMC path, while substituting an off-key Lumentum/transceiver point."
+      },
+      {
+        "id": "mh3",
+        "kind": "multihop",
+        "strategy": "A",
+        "pass": 2,
+        "insufficient": false,
+        "verdict": "partial",
+        "reason": "The candidate correctly names TSMC as a bridge and the substrate/Ajinomoto material chokepoint, but misses the core gold upstream SPOFs (ASML/EUV monopoly, wafers, specialty gases, SK Hynix/HBM) and instead introduces Lumentum/optical interconnect which is not part of the gold's upstream material chokepoints."
+      },
+      {
+        "id": "mh3",
+        "kind": "multihop",
+        "strategy": "A",
+        "pass": 3,
+        "insufficient": false,
+        "verdict": "partial",
+        "reason": "It correctly identifies TSMC as the foundry bridge and Ajinomoto substrate as a chokepoint, but misses the gold's essential upstream material chokepoints (ASML/EUV lithography monopoly, wafers/critical metals, specialty gases) and SK Hynix/HBM, substituting tangential items (Lasertec, Lumentum optics) instead."
+      },
+      {
+        "id": "mh3",
+        "kind": "multihop",
+        "strategy": "C",
+        "pass": 1,
+        "insufficient": false,
+        "verdict": "partial",
+        "reason": "The answer correctly names TSMC, the substrate path (Ajinomoto/Ibiden), and SK Hynix as bridge dependencies, but misses the gold's essential upstream material chokepoints — ASML's EUV monopoly, wafers/critical metals, and specialty gases/chemicals — which are the core of the SPOF answer."
+      },
+      {
+        "id": "mh3",
+        "kind": "multihop",
+        "strategy": "C",
+        "pass": 2,
+        "insufficient": false,
+        "verdict": "partial",
+        "reason": "Correctly routes through TSMC and names SK Hynix HBM and Ajinomoto substrate, but misses the gold's essential material chokepoints (ASML/EUV monopoly, wafers/critical metals, specialty gases) and the SPOF-hub framing, substituting unrelated nodes like Lasertec and Lumentum."
+      },
+      {
+        "id": "mh3",
+        "kind": "multihop",
+        "strategy": "C",
+        "pass": 3,
+        "insufficient": false,
+        "verdict": "partial",
+        "reason": "It correctly names some real upstream SPOFs (Ajinomoto substrate, TSMC, SK Hynix HBM) but misses the gold's core material chokepoints — ASML's EUV monopoly, wafers/critical metals, and specialty gases — substituting an unrelated networking laser supplier instead."
+      },
+      {
+        "id": "mh4",
+        "kind": "multihop",
+        "strategy": "A",
+        "pass": 1,
+        "insufficient": false,
+        "verdict": "correct",
+        "reason": "The candidate names both gold endpoints (GPU/server cluster as cooling's dependent context and power-management as the co-located rack sibling) and the key bridge entities (Vertiv/liquid cooling, NVDA GPUs, MPWR, Delta, Dell), and correctly captures the central insight that power management sits adjacent to cooling in the rack despite slightly muddling the dependency direction."
+      },
+      {
+        "id": "mh4",
+        "kind": "multihop",
+        "strategy": "A",
+        "pass": 2,
+        "insufficient": false,
+        "verdict": "correct",
+        "reason": "The candidate correctly conveys both endpoints — GPU/AI servers (NVDA Blackwell) depend on liquid cooling, and cooling sits next to the power-management subsystem (MPWR) in the rack — naming the key bridge entities (NVDA, Vertiv, Dell, MPWR/power management); missing only secondary suppliers (SMCI/HPE, Delta/Vicor), which does not undermine the core connection."
+      },
+      {
+        "id": "mh4",
+        "kind": "multihop",
+        "strategy": "A",
+        "pass": 3,
+        "insufficient": false,
+        "verdict": "partial",
+        "reason": "The candidate correctly identifies that GPU/AI servers (NVIDIA, Vertiv liquid cooling) depend on cooling and that cooling sits next to the power subsystem in the rack, but it names the wrong power entities (Eaton/Schneider/ABB grid distribution instead of the gold's power-management bridge MPWR/Delta/Vicor) and omits the Dell/SMCI/HPE server BOM bridge."
+      },
+      {
+        "id": "mh4",
+        "kind": "multihop",
+        "strategy": "C",
+        "pass": 1,
+        "insufficient": false,
+        "verdict": "correct",
+        "reason": "The answer correctly conveys that liquid cooling serves the GPU/server compute cluster (NVDA GB200 GPUs, AI servers) and sits adjacent in the rack to the power-management/distribution layer, naming the right suppliers (Vertiv for cooling; MPWR/Delta for power), matching the gold's core path and key bridge entities."
+      },
+      {
+        "id": "mh4",
+        "kind": "multihop",
+        "strategy": "C",
+        "pass": 2,
+        "insufficient": false,
+        "verdict": "correct",
+        "reason": "The answer correctly identifies that AI GPUs (NVIDIA) depend on Vertiv liquid cooling and that cooling sits next to power-management components (MPWR, Delta) in the rack, naming the essential bridge entities (NVDA, Vertiv/liquid cooling, Dell AI servers, power management MPWR/Delta) that match the gold's path."
+      },
+      {
+        "id": "mh4",
+        "kind": "multihop",
+        "strategy": "C",
+        "pass": 3,
+        "insufficient": false,
+        "verdict": "partial",
+        "reason": "The candidate correctly identifies that NVIDIA GPU/server systems depend on liquid cooling (with Vertiv), but for \"what cooling sits next to in the rack\" it names copper cables/Amphenol NVLink cartridges instead of the gold's power-management subsystem (MPWR, Delta, Vicor), missing the essential bridge entities for the second half of the question."
+      },
+      {
+        "id": "mh5",
+        "kind": "multihop",
+        "strategy": "A",
+        "pass": 1,
+        "insufficient": false,
+        "verdict": "correct",
+        "reason": "The candidate conveys the essential fuel→power→datacenter path (uranium mining via Cameco → nuclear SMRs → power delivered to data centers) and names the key bridge entities including uranium miners (Cameco), nuclear SMRs, and the utilities/IPPs serving datacenters (Constellation, Vistra) supplying hyperscalers like Microsoft and AWS."
+      },
+      {
+        "id": "mh5",
+        "kind": "multihop",
+        "strategy": "A",
+        "pass": 2,
+        "insufficient": false,
+        "verdict": "correct",
+        "reason": "The candidate conveys the full uranium→nuclear SMR→grid→IPPs/utilities→datacenter traversal and names every key bridge entity (Cameco, Oklo/NuScale, Constellation/Vistra IPPs, Dominion utility, datacenters), with the extra HALEU/Centrus detail being a non-contradictory addition."
+      },
+      {
+        "id": "mh5",
+        "kind": "multihop",
+        "strategy": "A",
+        "pass": 3,
+        "insufficient": false,
+        "verdict": "correct",
+        "reason": "The candidate articulates the full traversal path (uranium miners Cameco → nuclear SMRs Oklo/X-energy → energy grid PJM/ERCOT → merchant power/IPPs Vistra/Constellation → data centers) and names the correct bridge entities matching the gold's fuel→power→datacenter chain."
+      },
+      {
+        "id": "mh5",
+        "kind": "multihop",
+        "strategy": "C",
+        "pass": 1,
+        "insufficient": false,
+        "verdict": "correct",
+        "reason": "The answer traces the full gold path—uranium miners (Cameco/Kazatomprom/NXE) → nuclear/SMRs → merchant IPPs (Constellation/Vistra) and regulated utilities (Dominion/Oncor) → datacenters (DLR/Equinix/CoreWeave)—naming the essential bridge entities at each hop, with only minor variation in the specific nuclear-tech names cited."
+      },
+      {
+        "id": "mh5",
+        "kind": "multihop",
+        "strategy": "C",
+        "pass": 2,
+        "insufficient": false,
+        "verdict": "correct",
+        "reason": "The candidate traces the complete fuel→power→datacenter path with all key bridge entities: uranium miners (Cameco), nuclear/SMRs (Oklo, NuScale), regulated utilities (Dominion) and IPPs/merchant power (Constellation, Vistra), ending at datacenter demand (Digital Realty, Equinix), matching the gold's essential multi-hop connection."
+      },
+      {
+        "id": "mh5",
+        "kind": "multihop",
+        "strategy": "C",
+        "pass": 3,
+        "insufficient": false,
+        "verdict": "correct",
+        "reason": "The answer traces the full traversal path (uranium miners Cameco → nuclear reactors → merchant power IPPs Constellation/Vistra and regulated utility Dominion → datacenters) and names the key bridge entities including uranium suppliers, nuclear, IPPs/merchant power, and regulated utilities serving DCs, matching the gold's fuel→power→datacenter chain even if specific gold examples (NXE, Oklo, NuScale, BWXT) differ."
+      },
+      {
+        "id": "mh6",
+        "kind": "multihop",
+        "strategy": "A",
+        "pass": 1,
+        "insufficient": false,
+        "verdict": "correct",
+        "reason": "The candidate conveys the core multi-hop co-packaging path (HBM makers SK Hynix/Micron/Samsung → logic base dies via TSMC/Samsung foundry → advanced packaging/CoWoS + OSAT ASE/Amkor → GPU/AI accelerators) and names the essential gold bridge entities (SK Hynix, Micron, Samsung Memory, TSMC, NVDA-class GPUs, OSAT/advanced packaging); it only omits the secondary substrate/BMC detail, which does not break the core connection."
+      },
+      {
+        "id": "mh6",
+        "kind": "multihop",
+        "strategy": "A",
+        "pass": 2,
+        "insufficient": false,
+        "verdict": "partial",
+        "reason": "It correctly names the HBM makers (SK Hynix, Micron, Samsung), foundry (TSMC), and advanced packaging/OSAT (CoWoS, ASE, Amkor) and explains the foundry-base-die-to-packaging integration, but it omits the GPU/NVDA bridge node central to the gold's multi-hop framing and the substrate layer (BMC/Ajinomoto/Ibiden) entirely."
+      },
+      {
+        "id": "mh6",
+        "kind": "multihop",
+        "strategy": "A",
+        "pass": 3,
+        "insufficient": false,
+        "verdict": "correct",
+        "reason": "The candidate conveys the multi-hop path (HBM makers → foundry logic base dies → advanced packaging/OSAT assembly) and names the key bridge entities (SK Hynix, Samsung, Micron, TSMC foundry, OSAT/CoWoS advanced packaging via ASE/Amkor); it omits only the secondary substrate/BMC layer, which the rubric tolerates since the core connection is right."
+      },
+      {
+        "id": "mh6",
+        "kind": "multihop",
+        "strategy": "C",
+        "pass": 1,
+        "insufficient": false,
+        "verdict": "partial",
+        "reason": "The answer names key endpoints and some bridges (SK Hynix, Micron, Samsung Memory, TSMC, NVIDIA GPU, advanced packaging) but omits the essential OSAT and substrate/BMC layer (ASPEED, Ajinomoto, Ibiden) and instead drifts into tangential standards (HBF, Broadcom/TPU), so it only partially conveys the full co-packaging path through foundry to packaging and substrate."
+      },
+      {
+        "id": "mh6",
+        "kind": "multihop",
+        "strategy": "C",
+        "pass": 2,
+        "insufficient": false,
+        "verdict": "partial",
+        "reason": "It names the HBM makers and foundries (TSMC, Samsung) but misses the gold's essential bridge entities — NVDA's GPU as the integrating hub, OSAT/advanced packaging, and substrate/BMC (ASPEED, Ajinomoto, Ibiden) — and mischaracterizes the co-packaging path as logic base-die fabrication via Broadcom/MediaTek."
+      },
+      {
+        "id": "mh6",
+        "kind": "multihop",
+        "strategy": "C",
+        "pass": 3,
+        "insufficient": false,
+        "verdict": "partial",
+        "reason": "The candidate correctly names the HBM makers (SK Hynix, Samsung, Micron), the foundry (TSMC/Samsung Foundry), and advanced packaging, and articulates a real foundry-to-memory integration path via the logic base die/chiplets, but it omits essential bridge nodes from the gold's multi-hop story — the GPU/NVDA endpoint that drives co-packaging and the substrate/BMC layer (Ajinomoto, Ibiden, ASPEED)."
+      },
+      {
+        "id": "mh7",
+        "kind": "multihop",
+        "strategy": "A",
+        "pass": 1,
+        "insufficient": false,
+        "verdict": "correct",
+        "reason": "The candidate captures the full interconnect family clustering under networking and names all key bridge entities — switching silicon (Broadcom, Marvell), optical (Coherent, Lumentum), fabric (Arista + NVDA Spectrum-X), Astera Labs scale-up fabric, active electrical cables (Credo, MACOM), and DPUs/SmartNICs — matching the gold's required entities and relationships."
+      },
+      {
+        "id": "mh7",
+        "kind": "multihop",
+        "strategy": "A",
+        "pass": 2,
+        "insufficient": false,
+        "verdict": "correct",
+        "reason": "The candidate captures the full interconnect family clustering under networking and names all essential gold entities across every layer — switching silicon (Broadcom, Marvell), optical (Coherent, Lumentum), fabric (Arista + NVDA Spectrum-X), Astera Labs scale-up fabric, AECs (Credo), and DPUs/SmartNICs — missing only the secondary AEC supplier Macom, which the rubric permits."
+      },
+      {
+        "id": "mh7",
+        "kind": "multihop",
+        "strategy": "A",
+        "pass": 3,
+        "insufficient": false,
+        "verdict": "correct",
+        "reason": "The candidate names every key gold entity across all layers (Broadcom/Marvell switching, Coherent/Lumentum optical, Arista + NVDA Spectrum-X fabric, Astera Labs scale-up fabric, Credo/Macom active electrical cables, DPUs/SmartNICs) and conveys the interconnect family clustering under networking with DPUs as supporting components, matching the gold's relationship and supplier set."
+      },
+      {
+        "id": "mh7",
+        "kind": "multihop",
+        "strategy": "C",
+        "pass": 1,
+        "insufficient": false,
+        "verdict": "correct",
+        "reason": "The candidate covers all five layers and names every key gold entity (Broadcom/Marvell switching silicon, Arista + Nvidia Spectrum-X fabric, Coherent/Lumentum optical, Astera scale-up, Credo/MACOM cables, DPUs/SmartNICs) while conveying the clustering of the interconnect family under networking with DPUs one hop deeper."
+      },
+      {
+        "id": "mh7",
+        "kind": "multihop",
+        "strategy": "C",
+        "pass": 2,
+        "insufficient": false,
+        "verdict": "correct",
+        "reason": "The candidate names every gold entity and tier—switching silicon (Broadcom, Marvell), fabric (Arista + Spectrum-X), Astera Labs scale-up, optical (Lumentum, Coherent), active electrical cables (Credo, MACOM), and DPUs/SmartNICs—correctly assembling the full networking/interconnect family."
+      },
+      {
+        "id": "mh7",
+        "kind": "multihop",
+        "strategy": "C",
+        "pass": 3,
+        "insufficient": false,
+        "verdict": "correct",
+        "reason": "The candidate enumerates the full interconnect family clustered under networking — switching silicon (Broadcom, Marvell), fabric (Arista, NVDA Spectrum-X), optical (Coherent, Lumentum), scale-up fabric (Astera Labs), active electrical cables (Credo, MACOM), and DPUs/SmartNICs — naming all the gold's key bridge entities and capturing the essential relationships."
+      },
+      {
+        "id": "mh8",
+        "kind": "multihop",
+        "strategy": "A",
+        "pass": 1,
+        "insufficient": false,
+        "verdict": "partial",
+        "reason": "The candidate nails the core path (China-Taiwan → TSMC → NVDA) and one chokepoint (advanced packaging/CoWoS/OSAT), but omits the other essential bridge chokepoints in the gold's blast radius — ASML/EUV lithography, wafers + critical metals, and the China domestic AI stack — collapsing the multi-neighbor traversal into a single-supplier story."
+      },
+      {
+        "id": "mh8",
+        "kind": "multihop",
+        "strategy": "A",
+        "pass": 2,
+        "insufficient": false,
+        "verdict": "partial",
+        "reason": "The candidate nails the core path (China/Taiwan risk → TSMC → NVDA) and the packaging chokepoint, but omits essential gold neighbor entities — ASML/EUV lithography and wafers/critical metals — and only obliquely touches the China domestic AI stack, so it captures the central bridge but not the full blast-radius traversal."
+      },
+      {
+        "id": "mh8",
+        "kind": "multihop",
+        "strategy": "A",
+        "pass": 3,
+        "insufficient": false,
+        "verdict": "correct",
+        "reason": "The candidate nails the gold's essential path (China/Taiwan geopolitical risk → TSMC as the foundry chokepoint → NVDA GPU supply) and names key entities including TSMC, advanced packaging (CoWoS/OSAT), Taiwan, export controls (China stack), and NVDA; it omits ASML and wafers/critical metals, but the core multi-hop connection and the primary bridge entity are correct."
+      },
+      {
+        "id": "mh8",
+        "kind": "multihop",
+        "strategy": "C",
+        "pass": 1,
+        "insufficient": false,
+        "verdict": "partial",
+        "reason": "It nails the core TSMC bridge (Taiwan foundry → NVDA GPUs) and touches advanced packaging/CoWoS, but omits most of the gold's exposed chokepoints (ASML/EUV, wafers + critical metals, OSAT, China domestic AI stack), so it misses the blast-radius traversal the gold requires."
+      },
+      {
+        "id": "mh8",
+        "kind": "multihop",
+        "strategy": "C",
+        "pass": 2,
+        "insufficient": false,
+        "verdict": "partial",
+        "reason": "The candidate nails the core path (China/Taiwan risk → TSMC → NVDA) and covers packaging/OSAT and raw materials/critical metals, but it misses the essential ASML/EUV lithography chokepoint and the China domestic AI stack node, so it captures most of the blast radius but not all the gold bridge entities."
+      },
+      {
+        "id": "mh8",
+        "kind": "multihop",
+        "strategy": "C",
+        "pass": 3,
+        "insufficient": false,
+        "verdict": "correct",
+        "reason": "The candidate nails the core path (China/Taiwan geopolitics → TSMC foundry → NVDA GPUs) plus two chokepoints (advanced packaging/CoWoS and wafers/critical metals via gallium/germanium); it omits ASML/EUV and the China domestic AI stack, but those are secondary chokepoints and the essential bridge relationship is correct."
+      },
+      {
+        "id": "mh9",
+        "kind": "multihop",
+        "strategy": "A",
+        "pass": 1,
+        "insufficient": false,
+        "verdict": "correct",
+        "reason": "The candidate correctly conveys the server-BOM decomposition path and names most key gold entities across the right categories — SK Hynix (HBM), Vertiv (liquid cooling), Vicor/Delta (power), ASPEED (BMC), Dell/SMCI/HPE — missing only some secondary entities (ODMs Foxconn/Quanta, substrate Ajinomoto/Ibiden, connectors Amphenol/TE/Molex), which still leaves the core BOM-supplier answer intact."
+      },
+      {
+        "id": "mh9",
+        "kind": "multihop",
+        "strategy": "A",
+        "pass": 2,
+        "insufficient": false,
+        "verdict": "correct",
+        "reason": "The answer correctly conveys the server BOM decomposition path and names the key gold entities across categories (SK Hynix/HBM, Vertiv/liquid cooling, Delta/power, ASPEED/BMC, Dell/SMCI/HPE, Wiwynn ODM); it omits the connectors category (Amphenol/TE/Molex) and substrate-specific suppliers, but missing these secondary entities does not undermine the correct core BOM structure."
+      },
+      {
+        "id": "mh9",
+        "kind": "multihop",
+        "strategy": "A",
+        "pass": 3,
+        "insufficient": false,
+        "verdict": "correct",
+        "reason": "The candidate correctly anchors on the Dell AI server BOM decomposition (node 164) and names the key BOM-supplier entities across the canonical categories — SK Hynix (HBM), Vertiv (cooling), Vicor + Delta (power), substrate/PCB, and ASPEED (BMC) — so the essential supplier relationship is right; it only omits the connectors category and ODMs (secondary misses), which does not break the core answer."
+      },
+      {
+        "id": "mh9",
+        "kind": "multihop",
+        "strategy": "C",
+        "pass": 1,
+        "insufficient": false,
+        "verdict": "partial",
+        "reason": "Captures the server-to-BOM-supplier relationship and several key entities (Dell/SMCI/HPE, ODMs Foxconn/Quanta/Wiwynn, SK Hynix HBM, Delta/Vicor power, ASPEED BMC), but omits entire gold BOM branches — cooling (Vertiv/liquid cooling), connectors (Amphenol/TE/Molex), and substrate suppliers (Ajinomoto/Ibiden) — so multiple essential entities are missing."
+      },
+      {
+        "id": "mh9",
+        "kind": "multihop",
+        "strategy": "C",
+        "pass": 2,
+        "insufficient": false,
+        "verdict": "correct",
+        "reason": "The candidate correctly conveys the core server-to-BOM-supplier relationship and names the key gold entities across most categories — servers (Dell, SMCI, HPE), HBM (SK Hynix), cooling (Vertiv), power (Delta, Vicor), and BMC (ASPEED) — and while it omits the connector trio (Amphenol/TE/Molex), the ODMs, and the substrate names (Ajinomoto/Ibiden), the essential path and the majority of bridge suppliers are present."
+      },
+      {
+        "id": "mh9",
+        "kind": "multihop",
+        "strategy": "C",
+        "pass": 3,
+        "insufficient": false,
+        "verdict": "partial",
+        "reason": "The answer correctly identifies the Dell/SMCI/HPE servers, the Dell BOM decomposition node, SK Hynix (HBM), Vicor/Delta (power), and ASPEED (BMC), but it misses several essential gold bridge entities — cooling (Vertiv/liquid cooling), connectors (Amphenol/TE/Molex), substrate suppliers (Ajinomoto/Ibiden), and the AI server ODMs (Foxconn/Quanta/Wiwynn) — while adding off-path NVIDIA/TSMC supply-chain framing, so it captures only part of the gold BOM path."
+      },
+      {
+        "id": "mh10",
+        "kind": "multihop",
+        "strategy": "A",
+        "pass": 1,
+        "insufficient": false,
+        "verdict": "correct",
+        "reason": "The candidate conveys the full 3-hop demand→power→fuel chain (AI labs → power-constrained datacenters/grid → nuclear SMRs → HALEU/enrichment → uranium) and names the key bridge entities: AI labs (OpenAI, Anthropic, xAI), SMRs (Oklo), HALEU/enrichment (Centrus), and uranium (Cameco, NXE), with only the merchant-power/IPP layer and a couple secondary suppliers (NuScale/BWXT, URENCO) left implicit."
+      },
+      {
+        "id": "mh10",
+        "kind": "multihop",
+        "strategy": "A",
+        "pass": 2,
+        "insufficient": false,
+        "verdict": "partial",
+        "reason": "The candidate captures the core demand→power→nuclear→HALEU fuel chain and names several key entities (AI labs, Oklo, NuScale, Centrus, HALEU/enrichment, SMRs), but omits the essential merchant power/IPP bridge node and the uranium suppliers (Cameco, NXE, miners), and barely conveys the grid hop, leaving the multi-hop path incomplete on its essential bridges."
+      },
+      {
+        "id": "mh10",
+        "kind": "multihop",
+        "strategy": "A",
+        "pass": 3,
+        "insufficient": false,
+        "verdict": "partial",
+        "reason": "The candidate correctly conveys the AI demand to nuclear fuel chain and names AI labs (OpenAI, Anthropic, xAI), SMRs (Oklo), and HALEU enrichment (Centrus), but it omits the essential bridge entities of IPPs/merchant power and the energy grid that the gold identifies as the connecting hops, and skips the uranium/Cameco mining layer."
+      },
+      {
+        "id": "mh10",
+        "kind": "multihop",
+        "strategy": "C",
+        "pass": 1,
+        "insufficient": false,
+        "verdict": "correct",
+        "reason": "The answer traces the full 3-hop chain from AI labs (OpenAI, Anthropic, xAI) through power/SMRs (Oklo, NuScale) to nuclear fuel (HALEU/Centrus, uranium/Cameco, NXE), naming the essential bridge entities and the right relationship."
+      },
+      {
+        "id": "mh10",
+        "kind": "multihop",
+        "strategy": "C",
+        "pass": 2,
+        "insufficient": false,
+        "verdict": "correct",
+        "reason": "The candidate correctly conveys the demand->power->fuel multi-hop chain and names the key gold entities at each layer (AI labs: OpenAI/Anthropic/xAI; SMRs: Oklo/NuScale; HALEU: Centrus; uranium: Cameco/NXE); it only generically references the power/grid intermediary and omits a few secondary names (Mistral, BWXT, URENCO), which does not undermine the core connection."
+      },
+      {
+        "id": "mh10",
+        "kind": "multihop",
+        "strategy": "C",
+        "pass": 3,
+        "insufficient": false,
+        "verdict": "correct",
+        "reason": "The candidate conveys the full demand→power→fuel chain from AI labs (OpenAI, Anthropic, xAI) through power demand to nuclear SMRs (Oklo, NuScale) and HALEU/enrichment (Centrus), naming the essential endpoints and bridge entities; it omits explicit IPP/merchant-power labeling and uranium miners (Cameco/NXE), but covers the energy/power bridge and core fuel suppliers, so the central connection is right."
+      },
+      {
+        "id": "mh11",
+        "kind": "multihop",
+        "strategy": "A",
+        "pass": 1,
+        "insufficient": true,
+        "verdict": "incorrect",
+        "reason": "The candidate declares the pack insufficient and fails to answer, providing none of the multi-hop path (fuel -> energy grid -> neocloud datacenter -> GPU) nor the bridge entities (energy/grid, AI neoclouds like CoreWeave), which per rubric is an incorrect non-answer."
+      },
+      {
+        "id": "mh11",
+        "kind": "multihop",
+        "strategy": "A",
+        "pass": 2,
+        "insufficient": true,
+        "verdict": "incorrect",
+        "reason": "The candidate denies any connection exists and flags the pack insufficient, directly contradicting the gold's 3-hop path (uranium -> energy grid -> neocloud datacenter -> GPU) and naming none of the essential bridge entities (energy/grid, AI neoclouds like CoreWeave/Crusoe/Lambda)."
+      },
+      {
+        "id": "mh11",
+        "kind": "multihop",
+        "strategy": "A",
+        "pass": 3,
+        "insufficient": true,
+        "verdict": "incorrect",
+        "reason": "The candidate concludes no connection exists and misses the entire gold path (uranium -> energy grid -> AI neocloud datacenters like CoreWeave/Crusoe/Lambda -> NVDA GPUs), failing to identify the essential bridge entities and giving an \"insufficient\" non-answer that contradicts the gold's multi-hop link."
+      },
+      {
+        "id": "mh11",
+        "kind": "multihop",
+        "strategy": "C",
+        "pass": 1,
+        "insufficient": true,
+        "verdict": "incorrect",
+        "reason": "The candidate claims no connection exists and flags the pack insufficient, failing to identify the 3-hop path (uranium fuel → energy grid → AI neocloud datacenter → GPU) and missing the essential bridge entities (energy/grid, neoclouds like CoreWeave)."
+      },
+      {
+        "id": "mh11",
+        "kind": "multihop",
+        "strategy": "C",
+        "pass": 2,
+        "insufficient": true,
+        "verdict": "incorrect",
+        "reason": "The candidate declares the pack insufficient and asserts no node bridges the two domains, failing to identify the essential energy/grid and AI-neocloud (CoreWeave/Crusoe/Lambda) bridge path that the gold says connects uranium to NVDA — an \"insufficient\" non-answer that also contradicts the gold."
+      },
+      {
+        "id": "mh11",
+        "kind": "multihop",
+        "strategy": "C",
+        "pass": 3,
+        "insufficient": false,
+        "verdict": "partial",
+        "reason": "It conveys the multi-hop energy-infrastructure bridge and names uranium miners and NVDA, but omits the essential AI neocloud datacenter bridge node (CoreWeave/Crusoe/Lambda) from the gold's path."
+      },
+      {
+        "id": "mh12",
+        "kind": "multihop",
+        "strategy": "A",
+        "pass": 1,
+        "insufficient": false,
+        "verdict": "partial",
+        "reason": "Correctly names both scaling subsystems (power delivery and liquid cooling) and the GPU driver, but answers \"how connected\" wrongly — it claims Delta manufacturing both is the bridge, whereas the gold says they are siblings connected only through the datacenter-buildout and GPU hubs, which the candidate never identifies as the connecting path."
+      },
+      {
+        "id": "mh12",
+        "kind": "multihop",
+        "strategy": "A",
+        "pass": 2,
+        "insufficient": false,
+        "verdict": "partial",
+        "reason": "The candidate correctly identifies the two scaling subsystems (cooling and power management) and names some right entities (Delta, MPWR, NVIDIA), but it gets the core connection wrong by asserting a direct thermodynamic/supplier (Delta) link, missing the gold's essential bridge path through the datacenter-buildout and GPU hubs, and omits the power distribution/rack entities (Schneider, Eaton) and Vertiv/Vicor."
+      },
+      {
+        "id": "mh12",
+        "kind": "multihop",
+        "strategy": "A",
+        "pass": 3,
+        "insufficient": false,
+        "verdict": "partial",
+        "reason": "The candidate correctly identifies the two scaling subsystems (power management/delivery and liquid cooling, citing Delta), but misses the essential bridge relationship — the gold's point is they are sibling subsystems connected ONLY through the datacenter-buildout and GPU hubs, whereas the candidate asserts a direct physics-of-heat link and omits the datacenter-buildout/NVDA bridge nodes."
+      },
+      {
+        "id": "mh12",
+        "kind": "multihop",
+        "strategy": "C",
+        "pass": 1,
+        "insufficient": false,
+        "verdict": "partial",
+        "reason": "It names nearly all key entities (Vertiv/liquid cooling, Schneider, Eaton, Delta, NVDA/GPU) and correctly says both scale with GPU power, but it mischaracterizes the connection — calling Delta a direct \"bridge\" between the subsystems rather than capturing that cooling and power are sibling subsystems linked only through the datacenter-buildout and GPU hubs."
+      },
+      {
+        "id": "mh12",
+        "kind": "multihop",
+        "strategy": "C",
+        "pass": 2,
+        "insufficient": false,
+        "verdict": "partial",
+        "reason": "The candidate correctly names both subsystems and the right suppliers (Vertiv/liquid cooling, Eaton/Schneider), but it asserts a direct \"thermal-electrical coupling\" between them rather than the gold's actual path — that they are sibling subsystems connected only through the datacenter-buildout and GPU hubs — missing the essential bridge entities."
+      },
+      {
+        "id": "mh12",
+        "kind": "multihop",
+        "strategy": "C",
+        "pass": 3,
+        "insufficient": false,
+        "verdict": "correct",
+        "reason": "The candidate correctly identifies cooling and power distribution/delivery as the two co-scaling rack subsystems, names the right gold suppliers (Vertiv + liquid/direct-to-chip cooling, Schneider + Eaton for power), and connects them through the datacenter buildout and NVIDIA GPU power density, matching the gold's bridge nodes; missing only the secondary power-management names (MPWR/Delta/Vicor), which is non-essential."
+      },
+      {
+        "id": "dir-q1",
+        "kind": "direct",
+        "strategy": "A",
+        "pass": 1,
+        "insufficient": false,
+        "verdict": "correct",
+        "reason": "Names all three key suppliers — SK Hynix (leader), Micron (US HBM/DRAM), and Samsung — with relationships matching the gold key."
+      },
+      {
+        "id": "dir-q1",
+        "kind": "direct",
+        "strategy": "C",
+        "pass": 1,
+        "insufficient": false,
+        "verdict": "correct",
+        "reason": "Names all three gold suppliers with correct roles — SK Hynix as HBM leader, Micron as US HBM producer, and Samsung as the laggard — matching the gold key's direct answer."
+      },
+      {
+        "id": "dir-q9",
+        "kind": "direct",
+        "strategy": "A",
+        "pass": 1,
+        "insufficient": false,
+        "verdict": "correct",
+        "reason": "The candidate directly names Vertiv as the primary liquid cooling company, fully conveying the gold's essential answer (Cooling — Vertiv + liquid cooling), with additional correct supporting entities."
+      },
+      {
+        "id": "dir-q9",
+        "kind": "direct",
+        "strategy": "C",
+        "pass": 1,
+        "insufficient": false,
+        "verdict": "correct",
+        "reason": "The answer names Vertiv as a direct liquid cooling provider, satisfying the gold's essential entity (Cooling — Vertiv + liquid cooling)."
+      },
+      {
+        "id": "dir-q10",
+        "kind": "direct",
+        "strategy": "A",
+        "pass": 1,
+        "insufficient": false,
+        "verdict": "correct",
+        "reason": "The candidate directly states ASML holds a monopoly on EUV lithography, matching the gold's canonical answer and key entity exactly."
+      },
+      {
+        "id": "dir-q10",
+        "kind": "direct",
+        "strategy": "C",
+        "pass": 1,
+        "insufficient": false,
+        "verdict": "correct",
+        "reason": "The answer directly states ASML holds the EUV lithography monopoly, matching the gold canonical answer and key entity exactly."
+      },
+      {
+        "id": "dir-q26",
+        "kind": "direct",
+        "strategy": "A",
+        "pass": 1,
+        "insufficient": false,
+        "verdict": "correct",
+        "reason": "The candidate correctly identifies power management chips for GPUs as supplied by MPWR and Delta with accurate detail, missing only the secondary entity Vicor, which the rubric permits for a correct verdict."
+      },
+      {
+        "id": "dir-q26",
+        "kind": "direct",
+        "strategy": "C",
+        "pass": 1,
+        "insufficient": false,
+        "verdict": "correct",
+        "reason": "The candidate correctly identifies GPU power management chip suppliers as MPWR, Delta, and Vicor, matching all three key gold entities and the direct-answer relationship."
+      },
+      {
+        "id": "dir-q35",
+        "kind": "direct",
+        "strategy": "A",
+        "pass": 1,
+        "insufficient": false,
+        "verdict": "correct",
+        "reason": "The answer correctly identifies EDA chip design software and names all key gold entities — Cadence, Synopsys, and Ansys (plus Siemens EDA)."
+      },
+      {
+        "id": "dir-q35",
+        "kind": "direct",
+        "strategy": "C",
+        "pass": 1,
+        "insufficient": false,
+        "verdict": "correct",
+        "reason": "Names all three gold entities (Cadence, Synopsys, Ansys) as the dominant EDA chip design software vendors, matching the direct answer."
+      },
+      {
+        "id": "dir-q39",
+        "kind": "direct",
+        "strategy": "A",
+        "pass": 1,
+        "insufficient": false,
+        "verdict": "incorrect",
+        "reason": "The gold answer is \"Wafers + critical metals,\" but the candidate lists commercial wafer manufacturers (Shin-Etsu, SUMCO, etc.) and never mentions the critical-metals bridge entity, so it names the wrong entities entirely."
+      },
+      {
+        "id": "dir-q39",
+        "kind": "direct",
+        "strategy": "C",
+        "pass": 1,
+        "insufficient": false,
+        "verdict": "partial",
+        "reason": "The candidate correctly identifies silicon wafer suppliers but misses the gold's essential bridge element linking wafers to critical metals."
+      }
+    ]
+  },
+  "weak_model_sweep_summary": {
+    "note": "context-pack C vs search-only A, multihop strict, tight maxNodes=10, Opus judge fixed. NON-MONOTONIC: uplift peaks at mid-tier.",
+    "multihop_strict": {
+      "opus_4.8": {
+        "A": 0.556,
+        "C": 0.571,
+        "delta": 0.015,
+        "verdict": "tie"
+      },
+      "sonnet_4.6": {
+        "A": 0.528,
+        "C": 0.694,
+        "delta": 0.166,
+        "verdict": "C wins"
+      },
+      "haiku_4.5": {
+        "A": 0.5,
+        "C": 0.472,
+        "delta": -0.028,
+        "verdict": "tie (wash)"
+      }
+    },
+    "direct_strict": {
+      "opus_4.8": "0.833/0.833",
+      "sonnet_4.6": "1.0/0.833",
+      "haiku_4.5": "0.833/0.833 (no regression any tier)"
+    }
+  }
+}

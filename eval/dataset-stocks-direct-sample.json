@@ -1,0 +1,71 @@
+{
+  "_comment": "DIRECT-QUERY regression sample pulled verbatim (queries + qrels) from the frozen dataset-stocks.json, 2026-06-13, to check that LLM query rewrite does not DEGRADE queries that already retrieve well. `rewrites` are realistic keyword-expansions an LLM would emit (some keep the query tight, some add company names \u2014 deliberately including the over-expansion risk). Paired with eval/dataset-stocks-reasoning.json for the E11 rewrite A/B.",
+  "gid_default": "fwmhe8ysfrnx9fw7",
+  "queries": {
+    "q1": "who makes HBM memory",
+    "q4": "small modular reactor stocks",
+    "q9": "liquid cooling companies",
+    "q10": "EUV lithography",
+    "q13": "Nvidia competitors in AI chips",
+    "q22": "data center REITs",
+    "q26": "power management chips for GPUs",
+    "q30": "humanoid robotics companies",
+    "q35": "EDA chip design software",
+    "q39": "silicon wafer suppliers"
+  },
+  "qrels": {
+    "q1": {
+      "27": 1,
+      "39": 3,
+      "40": 3,
+      "41": 3
+    },
+    "q4": {
+      "50": 3,
+      "68": 1
+    },
+    "q9": {
+      "48": 3
+    },
+    "q10": {
+      "28": 1,
+      "44": 3,
+      "45": 1
+    },
+    "q13": {
+      "34": 1,
+      "35": 3,
+      "37": 3,
+      "72": 3
+    },
+    "q22": {
+      "47": 3
+    },
+    "q26": {
+      "49": 1,
+      "156": 3
+    },
+    "q30": {
+      "74": 3
+    },
+    "q35": {
+      "76": 3
+    },
+    "q39": {
+      "33": 1,
+      "60": 3
+    }
+  },
+  "rewrites": {
+    "q1": "HBM high bandwidth memory makers and suppliers: SK Hynix, Micron, Samsung",
+    "q4": "small modular reactor SMR stocks: Oklo, NuScale, BWXT, nuclear",
+    "q9": "data center liquid cooling companies: Vertiv, thermal management",
+    "q10": "EUV extreme ultraviolet lithography: ASML monopoly, semiconductor equipment",
+    "q13": "Nvidia GPU competitors in AI chips: AMD, custom ASICs, inference chips",
+    "q22": "data center REITs: Digital Realty DLR, Equinix EQIX",
+    "q26": "power management chips and ICs for AI GPUs: MPWR Monolithic Power, Delta, Vicor",
+    "q30": "humanoid robotics and physical AI companies: Figure",
+    "q35": "EDA electronic design automation chip design software: Cadence, Synopsys, Ansys",
+    "q39": "silicon wafer suppliers and critical metals for semiconductors"
+  }
+}

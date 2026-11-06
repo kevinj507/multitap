@@ -1,0 +1,30 @@
+services:
+  app:
+    build: .
+    ports:
+      - "${HOST_PORT:-3000}:3000"
+    # Raise the container's open-file-descriptor cap from the conservative
+    # 1024 default. Each open SSE connection (one per browser tab watching a
+    # graph) costs one fd; 65535 leaves headroom for ~10K+ concurrent viewers
+    # comfortably. Setting both soft and hard at the container level lets the
+    # node process raise its own soft limit at startup.
+    ulimits:
+      nofile:
+        soft: 65535
+        hard: 65535
+    volumes:
+      # Persist Postgres data across `docker compose down` / `up` cycles.
+      # Wipe it with `docker compose down -v` if you want to start fresh.
+      # Uploaded node-background images live in this volume too (BYTEA in the
+      # `uploads` table), so disk usage scales with image use.
+      - pgdata:/var/lib/postgresql/data
+    # Forward env vars into the container as needed. Examples:
+    #   environment:
+    #     AUTH_PROVIDER: clerk
+    #     CLERK_SECRET_KEY: ${CLERK_SECRET_KEY}
+    #     CLERK_PUBLISHABLE_KEY: ${CLERK_PUBLISHABLE_KEY}
+    #     MULTITAP_UPLOAD_MAX_BYTES: 10485760   # 10 MB image cap
+    restart: unless-stopped
+
+volumes:
+  pgdata:

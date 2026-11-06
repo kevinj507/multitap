@@ -1,0 +1,41 @@
+name: supply-chain
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      # Pinned to commit SHAs, not tags. A tag like @v4 is mutable — whoever
+      # controls the action can repoint it, and that code runs here with the
+      # repo checked out. Don't "tidy" these back to tags; to upgrade, resolve
+      # the new tag to its SHA and update both the SHA and the trailing comment.
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: '3.x'
+
+      - name: Ensure origin/main exists
+        run: git fetch --no-tags origin +refs/heads/main:refs/remotes/origin/main
+
+      # On a push, origin/main IS the commit being checked, so nothing looks
+      # changed and the cooling-off check silently passes everything. Repoint
+      # it at what main was before the push.
+      - name: Point origin/main at the pre-push commit
+        if: >-
+          github.event_name == 'push' &&
+          github.event.before != '0000000000000000000000000000000000000000'
+        run: |
+          git fetch --no-tags origin ${{ github.event.before }}
+          git update-ref refs/remotes/origin/main ${{ github.event.before }}
+
+      - name: Supply-chain gate
+        run: python3 .githooks/supply_chain_gate.py

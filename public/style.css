@@ -1,0 +1,4684 @@
+/* === Theme system ===
+   Two themes are available, switched by [data-theme] on <html>:
+   - "dark"  → Cron Calendar style port. Dark cockpit, white-on-near-black,
+                 action-orange accent. Currently disabled at the UI level —
+                 loadSettings() in app.js pins everyone to "light".
+   - "light" → Active theme. Warm light canvas, ember-orange brand mark,
+                 cobalt-purple as the only chromatic interactive fill.
+                 Prose spec: /design/DESIGN.md. This file is the source of
+                 truth for the actual tokens and component CSS.
+   Both themes redefine the FULL set of tokens. Avoid relying on any
+   token cascading from base :root into a theme override — keep everything
+   redundantly explicit so adding a third theme later is straightforward.
+
+   Tokens that don't change across themes (spacing, sidebar width, the
+   semantic warning red) live in base :root. */
+
+:root {
+  /* --- Spacing scale (theme-invariant) --- */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+
+  /* --- Layout --- */
+  --sidebar-w: 200px;
+
+  /* --- Semantic accents used in misc UI moments (warning text,
+     edge-type icons). Both themes share these. --- */
+  --red: #D14D41;
+  --yellow: #D0A215;
+  --green: #879A39;
+  --cyan: #3AA99F;
+  --purple: #8B7EC8;
+  --magenta: #CE5D97;
+
+  /* === TYPOGRAPHY — theme-invariant ==========================================
+   * A theme is a PALETTE. It decides what colour things are, never what
+   * typeface or size they are. These four faces and both size scales are
+   * therefore declared once here and are identical in light and dark; only
+   * the colours they render in change.
+   *
+   * This used to be false: the dark block redefined all four --font-* tokens
+   * to Helvetica Neue, so the entire type system — the serif display face, the
+   * uppercase label face, the reading face — silently collapsed to one sans in
+   * dark mode. tests/theme-blocks-are-colour-only.test.js now fails the build
+   * if a typography token reappears inside a [data-theme] block.
+   *
+   * Roles (see design/DESIGN.md § Tokens — Typography):
+   *   --font-display  Playfair Display — display headings, report h2, stat values
+   *   --font-label    Nunito           — UPPERCASE eyebrows + pill labels ONLY
+   *   --font-body     DM Sans          — body copy, captions, reading surfaces
+   *   --font-ui       Inter            — controls, lists, app chrome
+   * ========================================================================= */
+  --font-display: 'Playfair Display', 'EB Garamond', Garamond, 'Times New Roman', serif;
+  --font-label:   'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-body:    'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-ui:      'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+  /* --- UI type scale — app chrome. Pick the token whose ROLE matches; don't
+     hardcode px. See design/DESIGN.md § Type Scale. --- */
+  --text-meta: 11px;
+  --text-body-sm: 13px;
+  --text-body: 14px;
+  --text-section: 15px;
+  --text-heading: 22px;
+  --text-heading-lg: 24px;
+  /* Legacy aliases — prefer the canonical names above in new code. */
+  --text-caption: var(--text-body-sm);
+  --text-subheading: var(--text-body);
+  --text-heading-sm: var(--text-heading);
+
+  /* --- Leading + tracking. Typography, so theme-invariant. The dark block
+     used to run looser (1.7 / 0.15px) to compensate for the Helvetica Neue
+     substitution; with the real faces restored in both themes that hack is
+     obsolete and both themes use the documented values. --- */
+  --leading-caption: 1.55;
+  --leading-body-sm: 1.55;
+  --leading-body: 1.55;
+  --tracking-body-sm: normal;
+
+  /* --- Prose scale — long-form reading surfaces (report + node bodies).
+     Separate from the UI scale above, whose roles are chips and form labels
+     and which stops at 24px. See design/DESIGN.md § Report Prose. --- */
+  --prose-h2: 26px;
+  --prose-h3: 17px;
+  --prose-h4: 15px;
+  --prose-body: 16px;
+  --prose-small: 14px;
+  --prose-caption: 13px;
+  --prose-leading: 1.75;
+  --prose-measure: 68ch;
+}
+
+/* ---------- DARK (default) — Cron Calendar reference ---------- */
+:root,
+:root[data-theme="dark"] {
+  /* Reference colors */
+  --color-cron-black: #0f0d0a;
+  --color-deep-graphite: #161412;
+  --color-bright-white: #ffffff;
+  --color-subtle-gray: #cccccc;
+  --color-action-orange: #ff4700;
+  --color-soft-ember: #451e09;
+  --color-deep-ember: #8b2e09;
+
+  /* Reference fonts (Helvetica Neue universally) */
+
+  /* === TYPE SCALE — single source of truth for text sizing ====================
+   * Every font-size in the codebase should pick one of these four tokens. If
+   * a new element doesn't fit any of them, change the scale; don't hardcode.
+   *
+   *   --text-meta      Chips, kbd hints, very small captions, status sub-text.
+   *   --text-body-sm   Member rows, picker option values, dense modal copy.
+   *   --text-body      Form labels (Mode/Font), picker triggers.
+   *   --text-section   Section headers (ACCESS/APPEARANCE) — 1px bigger
+   *                    than body so the hierarchy reads correctly; color +
+   *                    uppercase + tracking do the rest.
+   *   --text-heading   Modal h3, panel title.
+   *
+   * Font *family* and *color* are intentionally separate tokens (--font-*,
+   * --color-*) so app-level + graph-level overrides keep working.
+   * ========================================================================= */
+
+  /* Legacy tokens kept as aliases so existing callers don't break while the
+     audit migrates them. Prefer the five above for new code. */
+
+  /* Reference radii (flat surfaces, 4px buttons, 9999px pills) */
+  --radius-md: 4px;
+  --radius-full: 9999px;
+
+  /* Reference shadows — flat with subtle ember-tinted glow */
+  --shadow-sm: 0 4px 12px rgba(255, 71, 0, 0.06);
+  --shadow-md:
+    0 8px 24px rgba(0, 0, 0, 0.55),
+    0 2px 6px rgba(255, 71, 0, 0.08);
+
+  /* Legacy mymind token names → re-pointed to cron equivalents */
+  --color-canvas-white:   var(--color-cron-black);
+  --color-pure-white:     var(--color-deep-graphite);
+  --color-midnight-ink:   var(--color-bright-white);
+  --color-deep-slate:     var(--color-bright-white);
+  --color-graphite-nav:   var(--color-bright-white);
+  --color-storm:          var(--color-bright-white);
+  --color-steel:          var(--color-subtle-gray);
+  --color-slate:          var(--color-subtle-gray);
+  --color-ash:            var(--color-subtle-gray);
+  --color-mist:           rgba(255, 255, 255, 0.10);
+  --color-blush-tint:     rgba(255, 255, 255, 0.05);
+  --color-ember-orange:   var(--color-action-orange);
+  --color-cobalt-link:    var(--color-action-orange);
+
+  /* All four legacy font tokens collapse to Helvetica Neue */
+
+  /* Legacy radius aliases — cron is flatter than mymind */
+  --radius-cards:    8px;
+  --radius-cardsalt: 4px;
+  --radius-buttons:  4px;
+  --radius-tags:     var(--radius-full);
+
+  /* Backwards-compat surface aliases */
+  --bg: var(--color-cron-black);
+  --bg-2: var(--color-deep-graphite);
+  --bg-3: rgba(255, 255, 255, 0.05);
+  --bg-input: var(--color-deep-graphite);
+  --tx: var(--color-bright-white);
+  --tx-2: var(--color-subtle-gray);
+  --tx-3: rgba(204, 204, 204, 0.6);
+  --ui:   rgba(255, 255, 255, 0.05);
+  --ui-2: rgba(255, 255, 255, 0.10);
+  --ui-3: rgba(255, 255, 255, 0.15);
+  --border:        rgba(255, 255, 255, 0.10);
+  --border-strong: var(--color-subtle-gray);
+  --r-sm: 4px;
+  --r-md: 4px;
+  --r-lg: 8px;
+  --r-xl: 12px;
+
+  /* === Status hue families — DARK values ====================================
+   * These six families (light/medium/strong per family) used to be declared
+   * ONLY inside :root[data-theme="light"]. Ten call sites outside that block
+   * use them with no fallback — including the Outlined Green Pill primary CTA
+   * — so in dark mode `var(--green-strong)` was invalid at computed-value
+   * time and those declarations dropped entirely (the Save/Confirm button lost
+   * its green). A token must resolve in EVERY theme it can be reached from;
+   * tests/token-completeness.test.js now fails the build on a regression.
+   *
+   * These are not the light tints re-used: on a near-black ground the light
+   * tiers need to be dim washes (backgrounds) and the strong tiers need to
+   * stay legible as text/borders, so each tier is picked for this ground.
+   * ========================================================================= */
+
+  /* --- Workflow status colors — DARK values ---
+     Same class of omission: these were declared only in the light block while
+     the kanban column titles, the kanban flash keyframes and the node page's
+     .node-status-dot use them with no fallback — so in dark mode all four
+     statuses rendered colorless. `fill` tiers are tinted backgrounds (dim
+     washes on this ground); `stroke` tiers stay legible as line/text. */
+  --status-todo-stroke:        var(--color-subtle-gray);
+  --status-in-progress-stroke: #e8a24b;
+  --status-in-progress-fill:   rgba(232, 138, 27, 0.16);
+  --status-review-stroke:      #5fcf90;
+  --status-review-fill:        rgba(73, 202, 128, 0.16);
+  --status-done-stroke:        #8b83f0;
+  --status-done-fill:          rgba(79, 70, 229, 0.20);
+
+  /* Status — orange family */
+  --orange-light:  rgba(254, 114, 51, 0.14);
+  --orange-medium: #a8562c;
+  --orange-strong: #ff8a4c;
+
+  /* Status — purple family */
+  --purple-light:  rgba(164, 95, 255, 0.14);
+  --purple-medium: #7a4bb8;
+  --purple-strong: #b98cff;
+
+  /* Status — green family */
+  --green-light:  rgba(73, 202, 128, 0.14);
+  --green-medium: #3a8659;
+  --green-strong: #5fcf90;
+
+  /* Status — blue family */
+  --blue-light:  rgba(67, 172, 230, 0.14);
+  --blue-medium: #35708f;
+  --blue-strong: #63c0f0;
+
+  /* Status — red family */
+  --red-light:  rgba(239, 50, 48, 0.14);
+  --red-medium: #a3453c;
+  --red-strong: #f4675f;
+
+  /* Status — yellow family */
+  --yellow-light:  rgba(246, 197, 62, 0.14);
+  --yellow-medium: #9c7f33;
+  --yellow-strong: #f3ce5e;
+
+  /* Theme-scoped semantic accents */
+  --orange: var(--color-action-orange);
+  --blue: var(--color-action-orange);
+
+  /* === PROSE SCALE — long-form reading surfaces ==============================
+   * The --text-* scale above is for app CHROME: its roles are chips, form
+   * labels and modal titles, and it stops at 24px. Report and node bodies are
+   * a different problem — running text at a 68ch measure — so they get their
+   * own scale rather than borrowing UI tokens that mean something else.
+   *
+   * Consumed by `#reader-body`/`#node-body .toastui-editor-contents` and the
+   * .gt-* report component vocabulary. Sizes are theme-invariant (they live in
+   * both blocks only because the file has no shared non-color block for them);
+   * see design/DESIGN.md § Report Prose for the roles.
+   * ========================================================================= */
+
+  /* === CHART RAMP ===========================================================
+   * The ONLY colors a report figure may use. Inline SVG in a report body
+   * survives the Toast UI sanitizer and reads CSS custom properties, so a
+   * chart written with stroke="var(--chart-1)" recolors with the theme for
+   * free — no uploaded rasters, no per-theme variants. Aliased onto the
+   * status families so a figure can never drift from the palette.
+   * Ordered for categorical use: ember first (the brand mark), then the
+   * status hues at maximum separation.
+   * ========================================================================= */
+  --chart-1: var(--color-ember-orange);
+  --chart-2: var(--blue-strong);
+  --chart-3: var(--green-strong);
+  --chart-4: var(--purple-strong);
+  --chart-5: var(--yellow-strong);
+  --chart-6: var(--red-strong);
+  --chart-grid: var(--border);
+  --chart-label: var(--tx-3);
+
+  /* Layout / per-graph appearance defaults */
+  --canvas-bg: var(--color-cron-black);
+  --app-font: var(--font-ui);
+  --app-font-color: var(--color-bright-white);
+}
+
+/* ---------- LIGHT — refreshed palette (May 2026) ---------- */
+:root[data-theme="light"] {
+  /* === New palette — saved in full per design intent ===
+     Three neutrals, one main accent, six status hue families
+     (each family has light/medium/strong tiers). Roles are assigned
+     downstream via the legacy-name aliases that the rest of the CSS
+     and the cytoscape light style array reference. */
+
+  /* Neutrals */
+  --neutral-white:      #ffffff;
+  --neutral-light-grey: #f7f7f7;
+  --neutral-grey:       #e5e5e5;
+
+  /* Main theme accent */
+  --main-orange: #fb5305;
+
+  /* Status — orange family */
+  --orange-light:  #ffe3c8;
+  --orange-medium: #fead81;
+  --orange-strong: #fe7233;
+
+  /* Status — purple family */
+  --purple-light:  #f8e5fd;
+  --purple-medium: #efd6ff;
+  --purple-strong: #a45fff;
+
+  /* Status — green family */
+  --green-light:  #deffe3;
+  --green-medium: #beecd1;
+  --green-strong: #49ca80;
+
+  /* Status — blue family */
+  --blue-light:  #e2f9ff;
+  --blue-medium: #95daf5;
+  --blue-strong: #43ace6;
+
+  /* Status — red family */
+  --red-light:  #ffd6c4;
+  --red-medium: #e27f6e;
+  --red-strong: #ef3230;
+
+  /* Status — yellow family */
+  --yellow-light:  #fef0bf;
+  --yellow-medium: #f6e5a5;
+  --yellow-strong: #f6c53e;
+
+  /* === Reference-name aliases — re-pointed to the new palette === */
+  --color-ember-orange:    var(--main-orange);
+  --color-cobalt-link:     var(--purple-strong);
+  --color-midnight-ink:    #000000;
+  --color-canvas-white:    var(--neutral-light-grey);
+  --color-pure-white:      var(--neutral-white);
+  --color-blush-tint:      var(--neutral-light-grey);
+  --color-mist:            var(--neutral-grey);
+  --color-slate-blue-card: var(--blue-light);
+  --color-parchment-card:  var(--yellow-light);
+  --color-sage-card:       var(--green-light);
+  --color-deep-slate: #3a475a;
+  --color-storm: #4a5465;
+  --color-steel: #717286;
+  --color-slate: #748297;
+  --color-graphite-nav: #24272d;
+  --color-ash: #afb5c1;
+  --color-chalk: #a6a8aa;
+
+  /* Theme-scoped warning red — uses the new red-strong instead of the
+     base :root default. */
+  --red: var(--red-strong);
+
+  /* === Status semantic tokens (May 15 palette rotation) ===
+     One source of truth for status color across views. Both the kanban
+     column titles + flash backgrounds AND the graph view's cytoscape
+     style read these. Read DESIGN.md "Status semantic tokens" for the
+     rationale behind each color.
+       todo        — no hue, neutral storm grey
+       in_progress — amber: warm orange-tone, "actively working"
+       review      — green: calm, "ready for sign-off"
+       done        — indigo: settled, archival color
+     If a value here changes, both views update with no JS edits. */
+  --status-todo-stroke:        var(--color-storm);
+  --status-in-progress-stroke: #e88a1b;
+  --status-in-progress-fill:   #ffe7c5;
+  --status-review-stroke:      #49ca80;
+  --status-review-fill:        #deffe3;
+  --status-done-stroke:        #4f46e5;
+  --status-done-fill:          #e0e7ff;
+
+  /* Cron-token aliases for any rules that reference them directly.
+     Kept harmless under light by mapping to mymind equivalents. */
+  --color-cron-black:     var(--color-canvas-white);
+  --color-deep-graphite:  var(--color-pure-white);
+  --color-bright-white:   var(--color-graphite-nav);
+  --color-subtle-gray:    var(--color-steel);
+  --color-action-orange:  var(--color-ember-orange);
+  --color-soft-ember:     #ffe6df;
+  --color-deep-ember:     var(--color-ember-orange);
+
+  /* Reference fonts */
+
+  /* Type scale — see the master block at the top of the file for the spec.
+     This light-theme override resolves to the same values. */
+
+  /* Reference radii */
+  --radius-md: 12px;
+  --radius-full: 9999px;
+  --radius-cards:    16px;
+  --radius-cardsalt: 12px;
+  --radius-buttons:  100px;
+  --radius-tags:     36px;
+
+  /* Reference shadows — cool grey, soft */
+  --shadow-sm: rgba(140, 142, 151, 0.32) 0 4px 7px -4px;
+  --shadow-md:
+    rgba(140, 142, 151, 0.32) 0 4px 7px -4px,
+    rgba(140, 142, 151, 0.16) 0 12px 24px -8px;
+
+  /* Backwards-compat surface aliases */
+  --bg: var(--color-canvas-white);
+  --bg-2: var(--color-pure-white);
+  --bg-3: var(--color-blush-tint);
+  --bg-input: var(--color-pure-white);
+  --tx: var(--color-graphite-nav);
+  --tx-2: var(--color-storm);
+  --tx-3: var(--color-steel);
+  --ui:   rgba(0, 0, 0, 0.03);
+  --ui-2: rgba(0, 0, 0, 0.06);
+  --ui-3: var(--color-mist);
+  --border:        var(--color-mist);
+  --border-strong: var(--color-ash);
+  --r-sm: 8px;
+  --r-md: var(--radius-cardsalt);
+  --r-lg: var(--radius-cards);
+  --r-xl: 20px;
+
+  /* Theme-scoped semantic accents */
+  --orange: var(--color-ember-orange);
+  --blue: var(--color-cobalt-link);
+
+  /* Layout / per-graph appearance defaults */
+  --canvas-bg: var(--color-canvas-white);
+  --app-font: var(--font-ui);
+  --app-font-color: var(--color-deep-slate);
+
+  /* Prose scale — see the dark block for the roles. Same sizes in both
+     themes; only the colors these compose with differ. */
+
+  /* Chart ramp — same roles, re-resolved against the light palette. */
+  --chart-1: var(--color-ember-orange);
+  --chart-2: var(--blue-strong);
+  --chart-3: var(--green-strong);
+  --chart-4: var(--purple-strong);
+  --chart-5: var(--yellow-strong);
+  --chart-6: var(--red-strong);
+  --chart-grid: var(--border);
+  --chart-label: var(--tx-3);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+/* macOS renders text heavier than designed by default — antialias the root
+   so all text reads crisper. Other platforms ignore the property. */
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-body);
+  font-size: var(--text-body);
+  background: var(--color-canvas-white);
+  color: var(--color-storm);
+  overflow: hidden;
+}
+
+#cy {
+  position: fixed;
+  top: 0;
+  left: var(--sidebar-w);
+  width: calc(100vw - var(--sidebar-w));
+  height: 100vh;
+  /* JS sets the inline background based on per-graph settings; this is
+     just the initial paint before applySettings runs. */
+  background: var(--canvas-bg);
+}
+
+/* Kanban view occupies the same canvas region as #cy; applyView() flips
+   `.hidden` on whichever container shouldn't be active. Cytoscape stays
+   mounted under the hidden #cy so view-flips don't trigger a re-init. */
+#kanban {
+  position: fixed;
+  top: 0;
+  left: var(--sidebar-w);
+  width: calc(100vw - var(--sidebar-w));
+  height: 100vh;
+  background: var(--canvas-bg);
+  display: flex;
+  flex-direction: row;
+  gap: var(--space-3);
+  /* 80px clears the presence chrome at top:16/right:12 AND the bottom-bar
+     toolbar at bottom:24 (~38px tall). Symmetric on all sides for balance. */
+  padding: 80px;
+  box-sizing: border-box;
+  overflow: hidden;
+  /* Transform is driven by adjustKanbanForPanel — shifts the board left so
+     the side panel doesn't cover the selected card's column. Expressive
+     ease matches the panel + sidebar transitions. */
+  transition: transform 0.3s cubic-bezier(0.19, 1, 0.22, 1);
+}
+/* Disable transition during panel drag — mousemove fires every frame and
+   would otherwise queue 300ms animations behind the cursor. */
+#kanban.kanban-no-transition {
+  transition: none;
+}
+
+/* Kanban column. flex:1 gives equal widths on desktop; mobile (B6) will
+   switch to overflow-x scroll with fixed min-width. */
+.kb-column {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-pure-white);
+  border: 1px solid var(--color-mist);
+  border-radius: var(--radius-cards);
+  overflow: hidden;
+}
+.kb-column-header {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  background: inherit;
+  border-bottom: 1px solid var(--color-mist);
+}
+/* Title color carries the status semantic — no separate status dot needed.
+   Each column's title takes the strong-tier hue of its status, matching the
+   graph-view convention for status underlays. */
+.kb-column-title {
+  font-family: var(--font-label);
+  font-size: var(--text-body);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.125em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.kb-column[data-status="todo"]        .kb-column-title { color: var(--status-todo-stroke); }
+.kb-column[data-status="in_progress"] .kb-column-title { color: var(--status-in-progress-stroke); }
+.kb-column[data-status="review"]      .kb-column-title { color: var(--status-review-stroke); }
+.kb-column[data-status="done"]        .kb-column-title { color: var(--status-done-stroke); }
+.kb-column-count {
+  font-family: var(--font-body);
+  font-size: var(--text-meta);
+  color: var(--color-steel);
+  font-variant-numeric: tabular-nums;
+  margin-left: auto;
+}
+.kb-column-add {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border-radius: var(--radius-md);
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--color-steel);
+  cursor: pointer;
+  transition: background-color 200ms ease, color 200ms ease;
+}
+.kb-column-add:hover {
+  background: var(--color-blush-tint);
+  color: var(--color-graphite-nav);
+}
+.kb-column-add:active {
+  transform: scale(0.96);
+  transition: transform 120ms cubic-bezier(0.2, 0, 0, 1);
+}
+.kb-column-cards {
+  /* `flex: 1 1 0` + `min-height: 0` constrains the flex item to its
+     parent's allocation so `overflow-y: auto` engages once content
+     exceeds the column height. `flex: 1 1 auto` would let content
+     size grow the item past its parent, suppressing scrollbars. */
+  flex: 1 1 0;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+/* Empty column placeholder. No JS — the `:empty` pseudo handles it. */
+.kb-column-cards:empty::before {
+  content: 'Drop tasks here';
+  display: block;
+  padding: var(--space-4) var(--space-3);
+  text-align: center;
+  font-family: var(--font-body);
+  font-size: var(--text-body-sm);
+  color: var(--color-ash);
+  font-style: italic;
+}
+
+/* Kanban card. Uniform 1px border on all sides; the per-task color bar lives
+   in the ::before pseudo so a transparent left border doesn't leave the top
+   border visually indented. padding-left bumped by 4px to clear the bar. */
+.kb-card {
+  position: relative;
+  background: var(--color-pure-white);
+  border: 1px solid var(--color-mist);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  padding-left: calc(var(--space-3) + 4px);
+  cursor: pointer;
+  transition: background-color 200ms ease, border-color 200ms ease, box-shadow 200ms ease;
+}
+.kb-card::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: var(--card-color, transparent);
+  border-top-left-radius: calc(var(--radius-md) - 1px);
+  border-bottom-left-radius: calc(var(--radius-md) - 1px);
+}
+.kb-card:hover {
+  background: var(--color-blush-tint);
+  box-shadow: var(--shadow-sm);
+}
+/* Panel footer with the Delete-task action. Outlined Red Pill per the
+   design's destructive-button family. Hidden until an existing task is
+   loaded (toggled by JS based on editingTaskId). */
+.panel-footer {
+  margin-top: auto;
+  padding-top: var(--space-4);
+  display: flex;
+  justify-content: center;
+}
+.panel-delete-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  background: transparent;
+  border: 1px solid var(--red);
+  color: var(--red);
+  font-family: var(--font-label);
+  font-size: var(--text-body-sm);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.053em;
+  padding: 8px 16px;
+  border-radius: var(--radius-buttons);
+  cursor: pointer;
+  transition: background-color 200ms ease;
+}
+.panel-delete-btn:hover {
+  background: color-mix(in srgb, var(--red) 10%, transparent);
+}
+.panel-delete-btn:active {
+  transform: scale(0.96);
+  transition: transform 120ms cubic-bezier(0.2, 0, 0, 1);
+}
+.panel-footer.hidden { display: none; }
+
+/* Selected card — uses the local user's deterministic avatar color
+   (matches the graph-view convention where node.selected renders in
+   the user's own color). The --own-selection-color variable is set by
+   applyOwnSelectionColor() at presence-bootstrap; cobalt is the fallback
+   while presence isn't yet resolved. */
+.kb-card.selected {
+  border-color: var(--own-selection-color, var(--color-cobalt-link));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--own-selection-color, var(--color-cobalt-link)) 25%, transparent);
+}
+/* Peer presence on a kanban card. Mirrors the cy node convention:
+   peer-selected = solid colored outline; peer-editing = dashed outline.
+   --peer-color is set inline by applyPeerSelectionToCy. */
+.kb-card.peer-selected {
+  outline: 2px solid var(--peer-color, transparent);
+  outline-offset: -1px;
+}
+.kb-card.peer-editing {
+  outline: 2px dashed var(--peer-color, transparent);
+  outline-offset: -1px;
+}
+
+/* Drag-and-drop feedback. Card being dragged dims; column being hovered
+   gets an inset dashed cobalt outline so the indicator doesn't bump layout. */
+.kb-card.dragging {
+  opacity: 0.5;
+}
+.kb-column.drag-over {
+  outline: 2px dashed var(--color-cobalt-link);
+  outline-offset: -2px;
+}
+
+/* Flash highlight after a status change — pulses the card background in the
+   destination status's light-tier color, then fades back to white over 800ms.
+   Matches the graph-view "what just changed" flash convention. */
+/* Flash animations pulse the destination status's `fill` token, fading
+   back to white. Same status tokens as the column titles — touching the
+   token in :root updates both views' status visuals. */
+@keyframes kbFlashTodo        { from { background-color: var(--color-blush-tint); }       to { background-color: var(--color-pure-white); } }
+@keyframes kbFlashInProgress  { from { background-color: var(--status-in-progress-fill); } to { background-color: var(--color-pure-white); } }
+@keyframes kbFlashReview      { from { background-color: var(--status-review-fill); }      to { background-color: var(--color-pure-white); } }
+@keyframes kbFlashDone        { from { background-color: var(--status-done-fill); }        to { background-color: var(--color-pure-white); } }
+.kb-card.kb-flash-todo        { animation: kbFlashTodo 800ms ease-out; }
+.kb-card.kb-flash-in_progress { animation: kbFlashInProgress 800ms ease-out; }
+.kb-card.kb-flash-review      { animation: kbFlashReview 800ms ease-out; }
+.kb-card.kb-flash-done        { animation: kbFlashDone 800ms ease-out; }
+
+/* Mobile / narrow viewports: scroll columns horizontally with snap-points
+   so the user sees one column at a time. Columns get a fixed minimum width
+   instead of flex:1 equal-share, so they don't squish below readable size. */
+@media (max-width: 768px) {
+  #kanban {
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+  }
+  .kb-column {
+    flex: 0 0 auto;
+    min-width: 280px;
+    scroll-snap-align: start;
+  }
+}
+.kb-card-title {
+  font-family: var(--font-ui);
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--color-graphite-nav);
+  letter-spacing: -0.01em;
+  line-height: 1.3;
+  word-wrap: break-word;
+  text-wrap: pretty;
+}
+.kb-card-excerpt {
+  font-family: var(--font-body);
+  font-size: var(--text-body-sm);
+  color: var(--color-steel);
+  line-height: 1.4;
+  margin-top: var(--space-1);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+#kanban.hidden,
+#cy.hidden {
+  display: none;
+}
+/* Graph-only toolbar contents hide in kanban view. New stays visible —
+   its click handler branches on currentView and calls createKanbanTask in
+   kanban (matching the G hotkey). Fit and Tidy don't apply (no layout
+   to fit, no tidy pass). With Fit/Tidy hidden, every divider except the
+   last collapses so the remaining [New | Settings] reads with one
+   separator. */
+body.view-kanban #btn-zoom-fit,
+body.view-kanban #btn-tidy,
+body.view-kanban #tb-neutral-count,
+body.view-kanban #tb-neutral .tb-divider:not(:last-of-type) {
+  display: none;
+}
+
+/* Reader view (E16.3) occupies the same canvas region as #cy/#kanban;
+   applyView() flips `.hidden`. A calm long-form reading column: the report
+   body renders through a Toast UI Viewer into #reader-body. Client-only —
+   nothing here writes to the graph. */
+#reader {
+  position: fixed;
+  top: 0;
+  left: var(--sidebar-w);
+  width: calc(100vw - var(--sidebar-w));
+  height: 100vh;
+  background: var(--canvas-bg);
+  overflow-y: auto;
+  box-sizing: border-box;
+  /* 80px top clears the presence chrome, matching #kanban's clearance. */
+  padding: 80px 32px;
+}
+#reader.hidden { display: none; }
+#reader-article {
+  max-width: 68ch;
+  margin: 0 auto;
+}
+#reader-report-header.hidden { display: none; }
+#reader-title {
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 400;
+  letter-spacing: -0.04em;
+  color: var(--tx);
+  margin: 0 0 8px;
+}
+#reader-desc {
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--tx-2);
+  margin: 0 0 6px;
+}
+#reader-desc:empty { display: none; }
+#reader-meta {
+  font-family: var(--font-ui);
+  font-size: 12px;
+  color: var(--tx-3);
+  padding-bottom: 16px;
+  margin-bottom: 32px;
+  border-bottom: 1px solid var(--border);
+}
+/* ============================================================================
+ * REPORT PROSE — the long-form reading surfaces
+ * ============================================================================
+ * Shared by BOTH reading surfaces: the report (#reader-body) and the single
+ * node permalink page (#node-body). DESIGN.md § Node Page makes that deliberate
+ * — arriving from a citation should feel like turning a page, not switching
+ * apps — so these rules are authored once against both selectors, never
+ * duplicated.
+ *
+ * Everything here overrides Toast UI's stock content stylesheet, which the
+ * viewer bundle ships and which was never designed against this system. Before
+ * this block the body got three declarations (family/size/leading) and every
+ * heading, table and quote fell through to Toast UI's defaults.
+ *
+ * SANITIZER CONTRACT: the viewer runs the body through DOMPurify with
+ * FORBID_TAGS including `style` and `script`. A report therefore CANNOT carry
+ * its own CSS — but `div`, `span`, `figure`, `svg` and the `class` attribute
+ * all survive. That is why the .gt-* vocabulary below exists: the design
+ * system owns the look, and the drafting agent picks semantics by class name.
+ * The vocabulary is documented for authors in
+ * .claude/skills/multitap/SKILL.md and specified in design/DESIGN.md.
+ * tests/report-prose-vocabulary.test.js keeps the two in sync.
+ * ========================================================================== */
+
+#reader-body .toastui-editor-contents,
+#node-body .toastui-editor-contents {
+  font-family: var(--font-body);
+  font-size: var(--prose-body);
+  line-height: var(--prose-leading);
+  color: var(--tx);
+}
+
+/* --- Heading ladder -------------------------------------------------------
+   h2 carries the display serif already used for the report title, so section
+   breaks read editorially; h3/h4 drop to the body sans at weight 600 so the
+   hierarchy is unmistakable without a third face. h1 is not styled here — the
+   report's own title is chrome (#reader-title), and a body h1 would compete
+   with it. */
+#reader-body .toastui-editor-contents h2,
+#node-body .toastui-editor-contents h2 {
+  font-family: var(--font-display);
+  font-size: var(--prose-h2);
+  font-weight: 700;
+  line-height: 1.18;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+  color: var(--tx);
+  margin: 2.2em 0 0.6em;
+  padding: 0;
+  border-bottom: none;
+}
+#reader-body .toastui-editor-contents h3,
+#node-body .toastui-editor-contents h3,
+#reader-body .toastui-editor-contents h4,
+#node-body .toastui-editor-contents h4 {
+  font-family: var(--font-body);
+  font-weight: 600;
+  line-height: 1.34;
+  text-wrap: balance;
+  color: var(--tx);
+  border-bottom: none;
+}
+#reader-body .toastui-editor-contents h3,
+#node-body .toastui-editor-contents h3 {
+  font-size: var(--prose-h3);
+  margin: 1.9em 0 0.45em;
+}
+#reader-body .toastui-editor-contents h4,
+#node-body .toastui-editor-contents h4 {
+  font-size: var(--prose-h4);
+  margin: 1.6em 0 0.4em;
+  color: var(--tx-2);
+}
+/* First heading in a body shouldn't push a big gap under the header rule. */
+#reader-body .toastui-editor-contents > :first-child,
+#node-body .toastui-editor-contents > :first-child { margin-top: 0; }
+
+/* --- Running text --------------------------------------------------------- */
+#reader-body .toastui-editor-contents p,
+#node-body .toastui-editor-contents p {
+  margin: 0 0 1.05em;
+  color: var(--tx);
+}
+#reader-body .toastui-editor-contents strong,
+#node-body .toastui-editor-contents strong {
+  font-weight: 600;
+  color: var(--tx);
+}
+#reader-body .toastui-editor-contents em,
+#node-body .toastui-editor-contents em { font-style: italic; }
+#reader-body .toastui-editor-contents a,
+#node-body .toastui-editor-contents a {
+  color: var(--color-cobalt-link);
+  text-decoration: none;
+  border-bottom: 1px solid color-mix(in srgb, var(--color-cobalt-link) 35%, transparent);
+}
+#reader-body .toastui-editor-contents a:hover,
+#node-body .toastui-editor-contents a:hover {
+  border-bottom-color: var(--color-cobalt-link);
+}
+#reader-body .toastui-editor-contents hr,
+#node-body .toastui-editor-contents hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 2.4em 0;
+}
+#reader-body .toastui-editor-contents img,
+#node-body .toastui-editor-contents img {
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--r-md);
+}
+
+/* --- Lists — ember markers, the brand mark used as a mark, never a fill --- */
+#reader-body .toastui-editor-contents ul,
+#node-body .toastui-editor-contents ul,
+#reader-body .toastui-editor-contents ol,
+#node-body .toastui-editor-contents ol {
+  margin: 0 0 1.15em;
+  padding-left: 1.25em;
+}
+/* Toast UI sets `list-style: none` and draws its own ::before markers. We
+   suppress those below to get ember ::marker, so the native list-style has to
+   be put BACK explicitly — without this the lists render with no bullets and
+   no numbers at all. */
+#reader-body .toastui-editor-contents ul,
+#node-body .toastui-editor-contents ul { list-style: disc; }
+#reader-body .toastui-editor-contents ol,
+#node-body .toastui-editor-contents ol { list-style: decimal; }
+#reader-body .toastui-editor-contents li,
+#node-body .toastui-editor-contents li {
+  margin-bottom: 0.45em;
+  /* Toast UI's own li color is tuned for its light theme and is nearly
+     invisible on our dark ground. */
+  color: var(--tx);
+}
+#reader-body .toastui-editor-contents li::marker,
+#node-body .toastui-editor-contents li::marker {
+  color: var(--color-ember-orange);
+}
+/* Toast UI draws its own ::before bullets and hides the native marker; undo
+   that so ::marker above actually applies. */
+#reader-body .toastui-editor-contents ul > li::before,
+#node-body .toastui-editor-contents ul > li::before,
+#reader-body .toastui-editor-contents ol > li::before,
+#node-body .toastui-editor-contents ol > li::before {
+  content: none;
+}
+
+/* --- Quotes --------------------------------------------------------------- */
+#reader-body .toastui-editor-contents blockquote,
+#node-body .toastui-editor-contents blockquote {
+  margin: 1.5em 0;
+  padding: 2px 0 2px 1.35em;
+  border-left: 2px solid var(--color-ember-orange);
+  background: none;
+  font-family: var(--font-display);
+  font-size: 1.09em;
+  line-height: 1.5;
+  color: var(--tx);
+}
+#reader-body .toastui-editor-contents blockquote p:last-child,
+#node-body .toastui-editor-contents blockquote p:last-child { margin-bottom: 0; }
+#reader-body .toastui-editor-contents blockquote cite,
+#node-body .toastui-editor-contents blockquote cite {
+  display: block;
+  margin-top: 0.6em;
+  font-family: var(--font-body);
+  font-size: var(--prose-caption);
+  font-style: normal;
+  color: var(--tx-3);
+}
+
+/* --- Code ----------------------------------------------------------------- */
+#reader-body .toastui-editor-contents code,
+#node-body .toastui-editor-contents code {
+  font-size: 0.88em;
+  padding: 0.12em 0.38em;
+  border-radius: var(--r-sm);
+  background: var(--ui);
+  color: var(--tx);
+}
+#reader-body .toastui-editor-contents pre,
+#node-body .toastui-editor-contents pre {
+  margin: 1.4em 0;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--bg-2);
+  overflow-x: auto;
+}
+#reader-body .toastui-editor-contents pre code,
+#node-body .toastui-editor-contents pre code {
+  padding: 0;
+  background: none;
+  font-size: var(--prose-caption);
+  line-height: 1.6;
+}
+
+/* --- Tables ---------------------------------------------------------------
+   Toast UI ships no table treatment worth keeping. Header row borrows the
+   eyebrow language (Nunito, uppercase, tracked) so data tables read as part of
+   the same system as the app chrome. `caption` sits BELOW the table and is
+   where the takeaway goes. Digits are tabular so columns align.
+   A wide table is contained by .gt-scroll (below) — required, because the
+   reading measure is 68ch and an uncontained table scrolls the whole page. */
+#reader-body .toastui-editor-contents table,
+#node-body .toastui-editor-contents table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 0;
+  font-size: var(--prose-small);
+  font-variant-numeric: tabular-nums;
+  border: none;
+}
+#reader-body .toastui-editor-contents th,
+#node-body .toastui-editor-contents th,
+#reader-body .toastui-editor-contents td,
+#node-body .toastui-editor-contents td {
+  padding: 9px 14px;
+  text-align: left;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  background: none;
+  color: var(--tx);
+}
+#reader-body .toastui-editor-contents thead th,
+#node-body .toastui-editor-contents thead th {
+  font-family: var(--font-label);
+  font-size: var(--text-meta);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--tx-3);
+  background: var(--bg-3);
+  white-space: nowrap;
+}
+#reader-body .toastui-editor-contents tbody tr:last-child td,
+#node-body .toastui-editor-contents tbody tr:last-child td { border-bottom: none; }
+#reader-body .toastui-editor-contents caption,
+#node-body .toastui-editor-contents caption {
+  caption-side: bottom;
+  text-align: left;
+  /* Bottom padding matters: the caption is the last thing inside .gt-scroll,
+     so without it the text sits flush on the container's border. */
+  padding: 10px 14px 12px;
+  font-size: var(--prose-caption);
+  line-height: 1.5;
+  color: var(--tx-3);
+}
+/* Numeric column alignment — opt-in per cell, since markdown tables can't
+   express column types. */
+#reader-body .toastui-editor-contents .num,
+#node-body .toastui-editor-contents .num { text-align: right; white-space: nowrap; }
+
+/* ============================================================================
+ * .gt-* REPORT COMPONENT VOCABULARY
+ * ----------------------------------------------------------------------------
+ * The fixed set of classes a report author may use via HTML-in-markdown.
+ * Namespaced `gt-` so nothing collides with Toast UI's own classes. Adding a
+ * class here means adding it to SKILL.md's vocabulary table too — the
+ * vocabulary test fails the build otherwise, so a drafter can never emit a
+ * class that renders unstyled.
+ * ========================================================================== */
+
+/* Wide-content container. Any table, figure or block that can exceed the
+   reading measure goes inside one of these so the PAGE never scrolls
+   sideways — only the block does. */
+#reader-body .gt-scroll,
+#node-body .gt-scroll {
+  overflow-x: auto;
+  margin: 1.5em 0;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--bg-2);
+}
+#reader-body .gt-scroll > table,
+#node-body .gt-scroll > table { min-width: 34em; }
+
+/* Section eyebrow — the app's uppercase label language, in prose. Names what
+   the section IS; must encode something true, never decorate. */
+#reader-body .gt-eyebrow,
+#node-body .gt-eyebrow {
+  font-family: var(--font-label);
+  font-size: var(--text-body);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.125em;
+  color: var(--color-ember-orange);
+  margin: 0 0 var(--space-5);
+}
+#reader-body .gt-eyebrow.muted,
+#node-body .gt-eyebrow.muted { color: var(--tx-3); }
+
+/* Callout. Left-border hue encodes severity: default = neutral aside,
+   .warn = read this before you act on the section, .key = the finding. */
+#reader-body .gt-note,
+#node-body .gt-note {
+  margin: 1.6em 0;
+  padding: 16px 20px;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--tx-3);
+  border-radius: var(--r-md);
+  background: var(--bg-2);
+  font-size: var(--prose-small);
+}
+#reader-body .gt-note.warn,
+#node-body .gt-note.warn { border-left-color: var(--yellow-strong); }
+#reader-body .gt-note.key,
+#node-body .gt-note.key { border-left-color: var(--color-ember-orange); }
+#reader-body .gt-note > p:last-child,
+#node-body .gt-note > p:last-child { margin-bottom: 0; }
+#reader-body .gt-note .h,
+#node-body .gt-note .h {
+  font-family: var(--font-label);
+  font-size: var(--text-meta);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--tx-3);
+  margin: 0 0 0.5em;
+}
+
+/* KPI tile row. Hairline grid via gap-over-background, so tiles share rules
+   without doubled borders. */
+#reader-body .gt-stats,
+#node-body .gt-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9.5em, 1fr));
+  gap: 1px;
+  margin: 1.6em 0;
+  background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  overflow: hidden;
+}
+#reader-body .gt-stat,
+#node-body .gt-stat { background: var(--bg-2); padding: 14px 16px; }
+#reader-body .gt-stat .k,
+#node-body .gt-stat .k {
+  font-family: var(--font-label);
+  font-size: var(--text-meta);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.11em;
+  color: var(--tx-3);
+  margin-bottom: 0.35em;
+}
+#reader-body .gt-stat .v,
+#node-body .gt-stat .v {
+  font-family: var(--font-display);
+  font-size: 1.6em;
+  font-weight: 700;
+  line-height: 1.08;
+  font-variant-numeric: tabular-nums;
+  color: var(--tx);
+}
+#reader-body .gt-stat .s,
+#node-body .gt-stat .s {
+  font-size: var(--prose-caption);
+  color: var(--tx-3);
+  margin-top: 0.2em;
+  line-height: 1.4;
+}
+/* Direction-of-change semantics. Separate from the ember accent by design —
+   semantic color is not the brand mark. */
+#reader-body .gt-stat .v.up, #node-body .gt-stat .v.up,
+#reader-body .toastui-editor-contents .up, #node-body .toastui-editor-contents .up {
+  color: var(--green-strong);
+}
+#reader-body .gt-stat .v.down, #node-body .gt-stat .v.down,
+#reader-body .toastui-editor-contents .down, #node-body .toastui-editor-contents .down {
+  color: var(--red-strong);
+}
+
+/* Status chip. */
+#reader-body .gt-pill,
+#node-body .gt-pill {
+  display: inline-block;
+  font-family: var(--font-label);
+  font-size: var(--text-meta);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 2px 8px;
+  border-radius: var(--radius-tags);
+  border: 1px solid currentColor;
+  color: var(--tx-3);
+  vertical-align: middle;
+}
+#reader-body .gt-pill.good, #node-body .gt-pill.good { color: var(--green-strong); }
+#reader-body .gt-pill.bad,  #node-body .gt-pill.bad  { color: var(--red-strong); }
+#reader-body .gt-pill.flag, #node-body .gt-pill.flag { color: var(--yellow-strong); }
+
+/* Figure — the only container for a chart. Contains its own overflow so a
+   wide diagram never scrolls the page. */
+#reader-body .gt-fig,
+#node-body .gt-fig {
+  margin: 1.7em 0;
+  padding: 18px 16px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--bg-2);
+  overflow-x: auto;
+}
+#reader-body .gt-fig svg,
+#node-body .gt-fig svg { display: block; max-width: 100%; height: auto; }
+#reader-body .gt-fig figcaption,
+#node-body .gt-fig figcaption {
+  margin-top: 0.75em;
+  font-size: var(--prose-caption);
+  line-height: 1.5;
+  color: var(--tx-3);
+}
+/* Chart legend — sits above the plot, mirrors the series colors. */
+#reader-body .gt-legend,
+#node-body .gt-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5em 1.3em;
+  margin-bottom: 12px;
+  font-family: var(--font-label);
+  font-size: var(--prose-caption);
+  letter-spacing: 0.04em;
+  color: var(--tx-3);
+}
+#reader-body .gt-legend i,
+#node-body .gt-legend i {
+  display: inline-block;
+  width: 16px;
+  height: 2.5px;
+  vertical-align: middle;
+  margin-right: 6px;
+}
+
+/* Two-up card grid — for genuinely paired content (for/against, before/after).
+   Collapses to one column on narrow viewports. */
+#reader-body .gt-cols,
+#node-body .gt-cols { display: grid; gap: 14px; margin: 1.6em 0; }
+@media (min-width: 720px) {
+  #reader-body .gt-cols.two,
+  #node-body .gt-cols.two { grid-template-columns: 1fr 1fr; }
+}
+#reader-body .gt-card,
+#node-body .gt-card {
+  padding: 18px 20px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--bg-2);
+  font-size: var(--prose-small);
+}
+#reader-body .gt-card > p:last-child,
+#node-body .gt-card > p:last-child { margin-bottom: 0; }
+#reader-body .gt-card .h,
+#node-body .gt-card .h {
+  font-family: var(--font-body);
+  font-size: var(--prose-h4);
+  font-weight: 600;
+  color: var(--tx);
+  margin: 0 0 0.45em;
+}
+
+/* Empty-state cue: same serif register as the canvas empty state. */
+#reader-empty {
+  text-align: center;
+  padding-top: 25vh;
+  font-family: var(--font-display);
+  font-size: var(--text-heading);
+  letter-spacing: -0.02em;
+  color: var(--tx-2);
+}
+#reader-empty.hidden { display: none; }
+/* Reader has no create/fit/tidy actions — hide the bottom toolbar wholesale
+   (heavier gate than kanban's per-button hiding: nothing in it applies). */
+body.view-reader #bottom-bar { display: none; }
+/* Reader is a pure reading surface: hide the entire graph/collaboration chrome
+   so a selection made in graph view doesn't bleed through (E16) — the presence
+   cursor tags, the collaborator avatar bar + hide-presence eye, the agent-follow
+   button, and the node Edit panel. */
+body.view-reader #peer-cursor-layer,
+body.view-reader #presence-bar,
+body.view-reader #presence-eye,
+body.view-reader #btn-follow-toggle,
+body.view-reader #panel { display: none !important; }
+/* Book toggle: both glyphs live in the DOM; show whichever matches the
+   current mode (the #presence-eye two-glyph pattern). Ember tint marks the
+   active tool, outline-only per the design system. */
+#sidebar .reader-icon-open { display: none; }
+body.view-reader #sidebar .reader-icon-open { display: inline; }
+body.view-reader #sidebar .reader-icon-closed { display: none; }
+body.view-reader #sidebar-reader-btn,
+body.view-reader #sidebar-reader-btn-collapsed { color: var(--color-ember-orange); }
+/* Reader-mode left rail (E16.5): swap the graph list for the report list. The
+   rail reuses .sb-item/.sb-section/.sb-meta so it matches the sidebar exactly;
+   only the container swap lives here. Collapse hides it like #sidebar-list. */
+#reader-list { display: none; }
+body.view-reader #sidebar-list,
+body.view-reader #sidebar-empty { display: none; }
+body.view-reader #reader-list { display: block; }
+#sidebar.collapsed #reader-list { display: none; }
+.reader-list-empty {
+  padding: 10px 14px;
+  font-family: var(--font-ui);
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--tx-3);
+}
+/* Staleness banner (E16.6): a calm, non-alarming amber note above the report
+   body when the graph has changed since the report was generated. */
+#reader-stale-banner {
+  margin: 0 0 24px;
+  padding: 10px 14px;
+  border-left: 3px solid var(--color-ember-orange);
+  background: var(--color-blush-tint);
+  border-radius: var(--radius-md);
+  font-family: var(--font-ui);
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--tx-2);
+}
+#reader-stale-banner.hidden { display: none; }
+/* Auto Contents rail (E16.17): a fixed sticky TOC in the reader's left margin,
+   between the sidebar and the centered 68ch column. Shown only where the margin
+   has room (wide viewports); reading-first below that. */
+#reader-toc {
+  position: fixed;
+  top: 100px;
+  left: calc(var(--sidebar-w) + 24px);
+  width: 190px;
+  max-height: calc(100vh - 140px);
+  overflow-y: auto;
+  z-index: 5;
+  /* Stay scrollable for a long outline, but hide the scrollbar — the moving
+     active-entry highlight is the scroll feedback, and a flickering bar is
+     distracting. */
+  scrollbar-width: none;      /* Firefox */
+  -ms-overflow-style: none;   /* legacy Edge */
+}
+#reader-toc::-webkit-scrollbar { display: none; } /* WebKit / Blink */
+#reader-toc.hidden { display: none; }
+#reader-toc .reader-toc-title {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--tx-3);
+  margin-bottom: 8px;
+  padding-left: 10px;
+}
+#reader-toc a {
+  display: block;
+  padding: 3px 0 3px 10px;
+  border-left: 2px solid transparent;
+  font-family: var(--font-ui);
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--tx-2);
+  text-decoration: none;
+  cursor: pointer;
+}
+#reader-toc a.lvl-3 { padding-left: 22px; }
+#reader-toc a.lvl-4 { padding-left: 34px; }
+#reader-toc a:hover { color: var(--tx); }
+#reader-toc a.active {
+  color: var(--color-ember-orange);
+  border-left-color: var(--color-ember-orange);
+}
+/* Headings clear the fixed presence chrome when the TOC scrolls to them. */
+#reader-body h2, #reader-body h3, #reader-body h4 { scroll-margin-top: 96px; }
+/* No room for a left rail on narrow viewports — hide it regardless of JS state. */
+@media (max-width: 1279px) {
+  #reader-toc { display: none !important; }
+}
+/* Inline citation footnotes (E16). Small raised ember numbers, click-through. */
+.reader-cite { font-size: 0; white-space: nowrap; }
+.reader-cite .cite-ref {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 0;
+  vertical-align: super;
+  color: var(--color-ember-orange);
+  cursor: pointer;
+  text-decoration: none;
+  padding: 0 1px;
+}
+.reader-cite .cite-ref:hover,
+.reader-cite .cite-ref:focus-visible { text-decoration: underline; outline: none; }
+.reader-cite sub, .reader-cite sup { font-size: 11px; }
+/* Hover card for a citation: node title + description + source URL + open hint.
+   NOT pointer-events:none — the card holds a real outbound link to the cited
+   source, so the pointer has to be able to reach it. app.js pairs this with a
+   short close delay so crossing the gap doesn't dismiss the card. */
+#reader-cite-tooltip {
+  position: fixed;
+  z-index: 30;
+  max-width: 320px;
+  padding: 10px 12px;
+  background: var(--color-pure-white);
+  border: 1px solid var(--color-mist);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+}
+#reader-cite-tooltip.hidden { display: none; }
+#reader-cite-tooltip .cite-tip-title {
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--tx);
+  margin-bottom: 4px;
+}
+#reader-cite-tooltip .cite-tip-desc {
+  font-family: var(--font-body);
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--tx-2);
+  margin-bottom: 6px;
+}
+/* The cited source's own URL — present only when the node's body has one (a
+   first-party table or an interview legitimately has none). Truncates rather
+   than wrapping so a long URL can't stretch the card into a paragraph; the
+   full value stays in the title attribute and the href. */
+#reader-cite-tooltip .cite-tip-url {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-ui);
+  font-size: 11px;
+  color: var(--color-cobalt-link);
+  text-decoration: none;
+  margin-bottom: 6px;
+}
+#reader-cite-tooltip .cite-tip-url:hover { text-decoration: underline; }
+/* The second of the card's two link rows — "the source" above, "the node" here.
+   It is a real anchor: it carries the ember of the superscripts it describes, so
+   it must behave like the link that colour promises. */
+#reader-cite-tooltip .cite-tip-hint {
+  display: block;
+  font-family: var(--font-ui);
+  font-size: 11px;
+  color: var(--color-ember-orange);
+  text-decoration: none;
+  cursor: pointer;
+}
+#reader-cite-tooltip .cite-tip-hint:hover { text-decoration: underline; }
+/* Numbered References list at the foot of the report. */
+#reader-references {
+  margin-top: 40px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+#reader-references.hidden { display: none; }
+#reader-references h2 {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  color: var(--tx);
+  margin: 0 0 12px;
+}
+#reader-references ol {
+  margin: 0;
+  padding-left: 22px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--tx-2);
+}
+#reader-references li { margin-bottom: 6px; }
+#reader-references .cite-ref-link {
+  color: var(--color-cobalt-link);
+  text-decoration: none;
+  font-weight: 500;
+}
+#reader-references .cite-ref-link:hover { text-decoration: underline; }
+/* Amber staleness dot on a rail row whose report is out of date. Distinct from
+   the active row's orange .sb-dot — this marks content freshness, not selection. */
+#reader-list .sb-item.stale .sb-dot {
+  background: var(--color-ember-orange);
+  box-shadow: 0 0 0 2px var(--color-blush-tint);
+}
+@media (max-width: 768px) {
+  #reader { padding: 72px 16px; }
+}
+
+/* === Single-node reading page (public/node.html, /g/<gid>/n/<id>) ===
+   The reader's calm column, standing alone: a citation click-through lands here
+   instead of cold-booting the SPA to show one node. It deliberately REUSES the
+   reader's type scale and measure (68ch, Playfair title, DM Sans body) rather
+   than inventing a second reading voice — arriving from the report should feel
+   like turning a page, not switching apps. Its own page, so there is no
+   sidebar to clear: the 80px reader top-padding drops to a plain 64px.
+   Note this page loads the Toast VIEWER css (10KB) rather than the editor's
+   (165KB); both define .toastui-editor-contents identically, which is what
+   lets the body rule below mirror #reader-body exactly. */
+/* Undo the app's scroll lock. `body { overflow: hidden }` is correct for the
+   SPA — everything there is fixed to the viewport (#sidebar, #cy, #kanban, and
+   #reader, which scrolls its own inner column) — but this page is ordinary
+   document flow and has to scroll the DOCUMENT. It inherits the lock because
+   `html` sets no overflow of its own, so body's value is what propagates to the
+   viewport; without this, a node longer than one screen simply can't be read. */
+body.view-node { overflow: visible; }
+#node-page {
+  min-height: 100vh;
+  background: var(--canvas-bg);
+  padding: 64px 32px 96px;
+  box-sizing: border-box;
+}
+#node-article {
+  max-width: 68ch;
+  margin: 0 auto;
+}
+/* Mode actions (top of the page): "Open graph" always, "Open report" only
+   when the report cites this node (node.js reveals it). Quiet text links in
+   the ui voice — the page is a reading surface; the actions shouldn't outweigh
+   the title under them. */
+#node-actions {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 24px;
+  font-family: var(--font-ui);
+  font-size: 13px;
+}
+#node-actions a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--tx-3);
+  text-decoration: none;
+}
+#node-actions a:hover { color: var(--color-ember-orange); }
+#node-actions .ph { font-size: 16px; }
+#node-open-report.hidden { display: none; }
+/* Section Eyebrow (DESIGN.md → Components): the node's `type` — 'reference',
+   'decision' — the one meta field that changes how you read what follows. */
+#node-eyebrow {
+  font-family: var(--font-label);
+  font-size: var(--text-body);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.125em;
+  color: var(--color-ember-orange);
+  margin-bottom: 12px;
+}
+#node-eyebrow.hidden { display: none; }
+#node-header.hidden { display: none; }
+#node-title {
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 400;
+  letter-spacing: -0.04em;
+  color: var(--tx);
+  margin: 0 0 8px;
+}
+#node-desc {
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--tx-2);
+  margin: 0 0 6px;
+}
+#node-desc:empty { display: none; }
+#node-meta {
+  font-family: var(--font-ui);
+  font-size: 13px;
+  color: var(--tx-3);
+  font-variant-numeric: tabular-nums;
+  /* Two SEMANTIC columns (node.js fills them): left = what the node is
+     (status + the 0–1 scores), right = when things happened (the datetime
+     fields, one place, one format). */
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: 8px 24px;
+  padding-bottom: 16px;
+  margin-bottom: 32px;
+  border-bottom: 1px solid var(--border);
+}
+.node-meta-col {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+/* One column again when the measure gets phone-narrow — two crowded columns
+   read worse than one calm one. */
+@media (max-width: 520px) {
+  #node-meta { grid-template-columns: minmax(0, 1fr); }
+}
+/* One field per row: a fixed-width glyph slot (Phosphor icon, or the status
+   dot) + "Label: value". Hovering or focusing a row reveals a small explainer
+   of what the field MEANS — the reserved-field vocabulary is graph jargon a
+   reader arriving from a shared link has never met. */
+.node-meta-row {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  cursor: default;
+}
+.node-meta-row:focus-visible {
+  outline: 1px solid var(--color-ember-orange);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+.node-meta-glyph {
+  width: 16px;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+}
+.node-meta-glyph .ph { font-size: 15px; color: var(--tx-3); }
+.node-meta-row[data-tip]::after {
+  content: attr(data-tip);
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + 6px);
+  z-index: 30;
+  width: max-content;
+  max-width: 300px;
+  padding: 8px 10px;
+  background: var(--color-pure-white);
+  border: 1px solid var(--color-mist);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  color: var(--tx-2);
+  font-family: var(--font-ui);
+  font-size: 12px;
+  line-height: 1.5;
+  font-variant-numeric: normal;
+  white-space: normal;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 120ms ease;
+  pointer-events: none;
+}
+.node-meta-row[data-tip]:hover::after,
+.node-meta-row[data-tip]:focus-visible::after {
+  opacity: 1;
+  visibility: visible;
+}
+/* Status reads at a glance off the same --status-* tokens the canvas and
+   kanban use, so a node's colour means the same thing in all three places. */
+.node-status-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  vertical-align: baseline;
+  background: var(--status-todo-stroke);
+}
+.node-status-dot[data-status="in_progress"] { background: var(--status-in-progress-stroke); }
+.node-status-dot[data-status="review"]      { background: var(--status-review-stroke); }
+.node-status-dot[data-status="done"]        { background: var(--status-done-stroke); }
+/* Container only — the full prose treatment (headings, tables, figures, the
+   .gt-* vocabulary) is shared with the reader and lives in ONE place: see
+   "REPORT PROSE" near #reader-body. */
+.node-body-empty {
+  font-family: var(--font-body);
+  font-size: 15px;
+  color: var(--tx-3);
+  font-style: italic;
+  margin: 0;
+}
+/* Connections — the node's edges as text. This is the context the canvas used
+   to be the only way to see, so it earns the same weight as the report's
+   References block it visually rhymes with. */
+#node-connections {
+  margin-top: 40px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+#node-connections.hidden { display: none; }
+#node-connections h2 {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  color: var(--tx);
+  margin: 0 0 16px;
+}
+.node-conn-group { margin-bottom: 16px; }
+.node-conn-label {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--tx-3);
+  margin-bottom: 4px;
+}
+.node-conn-group ul {
+  margin: 0;
+  padding-left: 18px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.6;
+}
+.node-conn-group li { margin-bottom: 2px; }
+.node-conn-group a {
+  color: var(--color-cobalt-link);
+  text-decoration: none;
+  font-weight: 500;
+}
+.node-conn-group a:hover { text-decoration: underline; }
+/* Error / no-such-node state — the reader's empty-state register. */
+#node-status {
+  text-align: center;
+  padding-top: 20vh;
+  font-family: var(--font-display);
+  font-size: var(--text-heading);
+  letter-spacing: -0.02em;
+  color: var(--tx-2);
+}
+#node-status.hidden { display: none; }
+#node-status p { margin: 0; }
+@media (max-width: 768px) {
+  #node-page { padding: 40px 16px 64px; }
+}
+
+/* Left sidebar */
+#sidebar {
+  /* Slow, expressive sidebar transitions per the mymind motion spec.
+     cubic-bezier(0.19, 1, 0.22, 1) is the reference's primary easing —
+     fast-in, slow-out at 0.7s gives a placed-rather-than-dropped feel. */
+  transition: width 0.7s cubic-bezier(0.19, 1, 0.22, 1);
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: var(--sidebar-w);
+  height: 100vh;
+  background: var(--color-pure-white);
+  border-right: 1px solid var(--color-mist);
+  z-index: 9;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+#sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  /* Right padding tuned so the collapse icon's visual center aligns with the
+     three-dot menu icon on each list row (right: 8px + 11px half-width = 19px;
+     28px-wide button needs right edge at 5px to put its icon center at 19px).
+     Left padding matches the 20px content X used by section headers below
+     so the new-btn's tint background aligns with their text. */
+  padding: 18px 5px 14px 20px;
+}
+.sb-icon-btn {
+  background: transparent;
+  color: var(--tx-2);
+  border: none;
+  border-radius: 6px;
+  width: 28px;
+  height: 28px;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.sb-icon-btn:hover { background: var(--ui); color: var(--tx); }
+.sb-icon-btn .ph { font-size: 16px; line-height: 1; }
+
+/* Header "New Graph" button — sits where the old GRAPHS label was.
+   Borderless: a low-alpha ember wash signals it's tappable, then deepens
+   on hover. Matches the borderless Settings button at the bottom rather
+   than introducing a heavier pill shape. */
+.sb-new-btn {
+  background: rgba(255, 71, 0, 0.08);
+  border: none;
+  border-radius: 6px;
+  padding: 5px 9px;
+  cursor: pointer;
+  font-family: var(--font-label);
+  font-size: var(--text-meta);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.125em;
+  color: var(--color-ember-orange);
+  transition: background-color 0.15s ease;
+}
+.sb-new-btn:hover { background: rgba(255, 71, 0, 0.16); }
+
+/* Collapsed-only buttons are rendered in DOM at all times so their listeners
+   stay bound; they're hidden until #sidebar enters .collapsed. */
+#sidebar-expand-btn,
+#sidebar-new-btn-collapsed,
+#sidebar-reader-btn-collapsed { display: none; }
+#sidebar.collapsed #sidebar-reader-btn-collapsed {
+  display: inline-flex;
+  align-self: center;
+  margin-bottom: 6px;
+}
+#sidebar.collapsed #sidebar-expand-btn {
+  display: inline-flex;
+  align-self: center;
+  margin-top: 10px;
+  margin-bottom: 2px;
+}
+#sidebar.collapsed #sidebar-new-btn-collapsed {
+  display: inline-flex;
+  align-self: center;
+  margin-bottom: 6px;
+  color: var(--color-ember-orange);
+  font-size: 20px;
+  font-weight: 500;
+  line-height: 1;
+}
+#sidebar.collapsed #sidebar-new-btn-collapsed:hover {
+  background: var(--ui);
+}
+
+#sidebar-bottom {
+  margin-top: auto;
+  padding: 10px 12px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+}
+
+/* Auth chrome — appears only when AUTH_PROVIDER=clerk and /api/config
+   reports auth_enabled. When empty (auth off), the slot collapses and the
+   sidebar bottom looks identical to Phase A. */
+#sidebar-auth {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  position: relative;
+}
+#sidebar-auth:empty {
+  display: none;
+}
+
+/* Combined account-and-settings row (signed-in). Gear icon + account
+   text; clicking opens the app-level settings modal. Hover surfaces a
+   "Sign out" popover above so the user can sign out without opening
+   the settings modal first. */
+.sb-account-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 8px;
+  border-radius: 6px;
+  font-size: var(--text-body-sm);
+  color: var(--tx-2);
+  min-width: 0;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+}
+.sb-account-row:hover { background: var(--ui); color: var(--tx); }
+.sb-account-row .ph { font-size: 16px; line-height: 1; flex: 0 0 16px; text-align: center; }
+.sb-account-row .sb-user-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+/* Sign-out hover popover. Mounted on <body> via JS so it isn't clipped by
+   the sidebar's overflow:hidden; positioned with `position: fixed` off the
+   account row's bounding rect. The wrapper is the card (border + shadow +
+   small padding); the button inside is transparent and just provides the
+   click target + hover background. */
+.sb-user-popover {
+  position: fixed;
+  z-index: 100;
+  display: flex;
+  background: var(--color-pure-white);
+  border: 1px solid var(--color-mist, var(--border));
+  border-radius: var(--radius-cards, 8px);
+  padding: 4px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+.sb-user-popover.hidden { display: none; }
+.sb-user-popover-btn {
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  padding: 4px 12px;
+  font-family: inherit;
+  font-size: var(--text-body-sm);
+  color: var(--tx);
+  cursor: pointer;
+  text-align: center;
+  white-space: nowrap;
+}
+.sb-user-popover-btn:hover { background: var(--ui); }
+.sb-user-popover-btn.danger { color: var(--red-strong, #b91c1c); }
+.sb-user-popover-btn.danger:hover { background: color-mix(in srgb, var(--red-strong, #b91c1c) 8%, transparent); }
+#sidebar.collapsed .sb-account-row .sb-user-name { display: none; }
+.sb-user-name {
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Agent tokens modal — designed to match the same eyebrow rhythm as the
+   graph-modal's Access/Appearance sections. Section labels are styled by
+   the global .modal-field > span:first-child rule (ember uppercase). */
+.modal-hint-intro {
+  /* Slight breathing room between the intro paragraph and the first
+     field. Matches the gap from h3 to first field. */
+  margin-bottom: 20px;
+}
+.modal-hint a {
+  color: var(--color-cobalt-link);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-decoration-thickness: 1px;
+}
+.modal-hint a:hover { text-decoration-thickness: 2px; }
+.agent-tokens-minted {
+  margin-top: 10px;
+  padding: 10px 12px;
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  border-radius: var(--radius-cards, 8px);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.agent-tokens-minted-warning {
+  margin: 0;
+  font-size: var(--text-meta);
+  color: rgb(180, 83, 9);
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.agent-tokens-minted-warning .ph { font-size: var(--text-body); line-height: 1; }
+.agent-tokens-list {
+  max-height: 260px;
+  overflow-y: auto;
+  border: 1px solid var(--color-mist, var(--border));
+  border-radius: var(--radius-cards, 8px);
+  padding: 4px;
+}
+/* Empty state: bare grey text under the section label, no list framing. */
+.agent-tokens-list.is-empty {
+  border: none;
+  padding: 0;
+  max-height: none;
+  overflow: visible;
+}
+.agent-tokens-empty-hint {
+  margin: 0;
+  font-size: var(--text-body-sm);
+  color: var(--color-storm, var(--tx-2));
+  font-style: italic;
+}
+.agent-token-row {
+  display: flex;
+  flex-direction: column;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--color-mist, var(--border));
+  transition: background-color 0.15s ease;
+}
+.agent-token-row:last-child { border-bottom: none; }
+.agent-token-row:hover { background: var(--color-blush-tint, transparent); }
+.agent-token-row-top {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+.agent-token-meta { flex: 1 1 auto; min-width: 0; }
+.agent-token-label {
+  font-family: var(--font-ui, inherit);
+  font-size: var(--text-body);
+  font-weight: 600;
+  color: var(--color-graphite-nav, var(--tx));
+  line-height: 1.3;
+}
+.agent-token-times {
+  font-size: var(--text-meta);
+  color: var(--color-storm, var(--tx-2));
+  margin-top: 4px;
+  line-height: 1.5;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* Inline revoke-confirm — expands below the row, no separate modal. The
+   revoke button on the right morphs into a Confirm button while this
+   section is open. Typing the token's label (or 'revoke' if unlabeled)
+   arms the button. */
+.agent-token-confirm {
+  margin-top: 8px;
+  padding: 8px 10px;
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+/* `.hidden` is a marker class in this codebase — each component declares its
+   own display:none override. Without these, the warning panel + minted-
+   plaintext block would be visible on first paint. */
+.agent-token-confirm.hidden { display: none; }
+.agent-tokens-minted.hidden { display: none; }
+
+/* Inline Access controls (Phase B5c) inside the graph-modal. Replaces the
+   old Private/Public checkbox + separate Share modal. */
+.modal-field-access {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+/* When the access section is hidden (legacy URL-bearer graphs have no
+   access concept — the URL is the access control), actually hide it.
+   Without this rule the section's `hidden` class only signals intent;
+   the dropdown stays visible but its click listener isn't attached
+   (wireAccessSection is intentionally skipped), making it look broken. */
+#graph-modal-access.hidden { display: none; }
+/* The Access section header inherits the .modal-field > span:first-child
+   base style — same sentence-case + ember treatment as every other section
+   header. No need to override here. */
+.access-controls {
+  display: flex;
+  flex-direction: column;
+  /* In-section row gap — smaller than the after-title gap above, per
+     the modal form rhythm. */
+  gap: var(--space-2);
+}
+/* Mode row: label + picker, same layout as the Appearance section's
+   Font row so the two read as part of the same form. */
+.access-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.access-row-label {
+  /* Match the Appearance section's "Font" label so the two stack cleanly
+     and read as part of the same form. */
+  flex: 0 0 100px;
+  font-family: var(--font-ui);
+  font-size: var(--text-body);
+  font-weight: 500;
+  color: var(--color-storm);
+  text-transform: none;
+  letter-spacing: 0;
+}
+.access-picker {
+  /* Fixed width + right-aligned caret so the caret position doesn't
+     shift when the selected Mode text changes length. Width tuned so
+     the caret center stacks under the share-row's COPY icon center
+     above (not the URL field right edge). */
+  width: 297px;
+}
+.access-picker .font-picker-trigger {
+  /* Right-cluster the text + caret so the gap between the last letter
+     and the caret is constant — switching Mode no longer shifts the
+     text's right edge relative to the caret. */
+  width: 100%;
+  justify-content: flex-end;
+}
+.access-picker .font-picker-menu {
+  /* The Mode menu is wider than the font menu because the options are long
+     descriptive labels ("Anyone with invite can view"). */
+  min-width: 260px;
+}
+.access-picker-inline .font-picker-menu {
+  min-width: 100px;
+}
+.access-members-section.hidden { display: none; }
+.access-members-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+}
+.access-invite-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  /* No left indent — email input starts at the same X as the Mode label
+     above. Width is tuned so the Editor caret still stacks under the
+     Mode caret. */
+}
+.access-invite-row input[type="email"] {
+  /* Form-line input — no box, just an underline. Italic placeholder so
+     the field reads as "write on the line". Width tuned so the Editor
+     caret roughly aligns with the Mode caret above. */
+  flex: 0 0 180px;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--color-mist);
+  border-radius: 0;
+  color: var(--color-graphite-nav);
+  font-family: var(--font-ui);
+  font-size: var(--text-body);
+  padding: 4px 0;
+  outline: none;
+}
+.access-invite-row input[type="email"]:focus { border-bottom-color: var(--color-cobalt-link); }
+.access-invite-row input[type="email"]::placeholder {
+  font-style: italic;
+  color: var(--color-steel);
+}
+/* Role picker uses the default .font-picker-trigger styling (transparent
+   text + caret) so it matches the Mode + Font pickers elsewhere in the
+   modal. Pushed right so its right edge aligns with the Mode picker's
+   right edge above (tuned to match the Mode trigger's natural width). */
+.access-invite-row .font-picker {
+  flex: 0 0 auto;
+  /* Pin the role picker to the wider of "Editor"/"Viewer" so the caret
+     X is constant when the user switches. Same trick as .access-picker
+     above. */
+  width: 70px;
+  /* Push the role picker right so its caret stacks under the Mode
+     caret above (which stacks under the COPY icon at the top). Tuned
+     to email width (180px) + role picker width (70px). */
+  margin-left: 147px;
+}
+.access-invite-row .font-picker .font-picker-trigger {
+  width: 100%;
+  justify-content: flex-end;
+}
+/* Send icon: width-matched to the share-row rotate button (both 30px)
+   and pushed right so its center stacks under the ROTATE icon above
+   (NOT the copy icon — the role-picker caret already sits under copy). */
+.access-invite-row .invite-send-btn { margin-left: 5px; }
+/* Send-invite icon button. Replaces the old "ADD" pill — a paper-plane
+   icon that turns green on hover and flashes into a check on send /
+   red x on validation or send failure. */
+.invite-send-btn {
+  position: relative;
+  flex: 0 0 auto;
+  background: transparent;
+  border: none;
+  /* Match the share-row copy button (0 6px) so the two icons render at
+     the same width and the centers stack vertically. */
+  padding: 0 6px;
+  cursor: pointer;
+  color: var(--color-slate, var(--tx-2));
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s ease;
+}
+.invite-send-btn .ph { font-size: 18px; line-height: 1; }
+.invite-send-btn:hover { color: var(--green-strong); }
+.invite-send-btn.sent { color: var(--green-strong); }
+.invite-send-btn.error { color: var(--red-strong, #b91c1c); }
+.invite-send-btn.sent .ph,
+.invite-send-btn.error .ph {
+  animation: invite-send-pulse 0.4s ease-out;
+}
+@keyframes invite-send-pulse {
+  0% { transform: scale(0.6); opacity: 0.4; }
+  60% { transform: scale(1.15); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+/* Small floating message above the button — appears only when the
+   button has a non-empty data-flash-message (error path only). */
+.invite-send-btn[data-flash-message]::before {
+  content: attr(data-flash-message);
+  position: absolute;
+  bottom: calc(100% + 6px);
+  right: 0;
+  background: var(--color-pure-white);
+  border: 1px solid var(--color-mist);
+  border-radius: 6px;
+  padding: 3px 8px;
+  font-family: var(--font-ui);
+  font-size: var(--text-meta);
+  font-weight: 500;
+  color: var(--red-strong, #b91c1c);
+  white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  pointer-events: none;
+}
+.access-members-list {
+  /* Up to ~5 rows visible (each row ≈ 32px including its vertical padding)
+     before vertical scrolling kicks in. No outer border or background —
+     rows sit directly on the modal. Small margin-top to visually separate
+     the list from the invite-row above it. Horizontal padding gives a
+     subtle "tab indent" so the list reads as a nested subsection. */
+  display: flex;
+  flex-direction: column;
+  max-height: 168px;
+  overflow-y: auto;
+  margin-top: 6px;
+  /* The scrollbar lives on the inside-right edge of this scroll container.
+     Pull the list's right boundary in by 11px so the 8px scrollbar centers
+     under the paper-plane icon above (which sits at the ROTATE-icon column,
+     11px left of the modal content-area's right edge). */
+  margin-right: 11px;
+  /* Symmetric tab-style indent. */
+  padding-left: 27px;
+  padding-right: 27px;
+  /* Scrollbar fades in only on hover/focus so it doesn't sit visible
+     when the user is looking at the rest of the modal. */
+  scrollbar-width: thin; /* Firefox */
+  scrollbar-color: transparent transparent;
+  transition: scrollbar-color 0.25s ease;
+}
+.access-members-list:hover,
+.access-members-list:focus-within {
+  scrollbar-color: var(--color-mist) transparent;
+}
+.access-members-list::-webkit-scrollbar {
+  width: 8px;
+}
+.access-members-list::-webkit-scrollbar-track { background: transparent; }
+.access-members-list::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 4px;
+  transition: background-color 0.25s ease;
+}
+.access-members-list:hover::-webkit-scrollbar-thumb,
+.access-members-list:focus-within::-webkit-scrollbar-thumb {
+  background: var(--color-mist);
+}
+.access-members-list::-webkit-scrollbar-thumb:hover {
+  background: var(--color-slate);
+}
+.access-members-list.hidden { display: none; }
+.access-member-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+}
+.access-member-avatar {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 10px;
+  font-weight: 600;
+  flex: 0 0 auto;
+}
+.access-member-email {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-family: var(--font-ui, inherit);
+  font-size: var(--text-body-sm);
+  color: var(--color-graphite-nav, var(--tx));
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* Notion-style chip: text on a soft background, no border, no
+   interactivity. Two variants — role (always grey) and pending (orange).
+   Each variant uses its own min-width so different label texts
+   (Editor/Viewer; Pending/...) render at a stable width and the row
+   layout doesn't shift when status/role changes. */
+.access-member-tag {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-family: var(--font-ui);
+  font-size: var(--text-meta);
+  font-weight: 500;
+  background: var(--color-mist, var(--ui));
+  color: var(--color-storm, var(--tx-2));
+  text-transform: capitalize;
+  text-align: center;
+}
+.access-member-role { min-width: 56px; }
+.access-member-tag-pending {
+  background: color-mix(in srgb, var(--color-ember-orange, #f97316) 16%, transparent);
+  color: var(--color-ember-orange, #c2410c);
+  min-width: 64px;
+}
+.access-member-kick {
+  /* Match the share-row copy button and the paper-plane send button —
+     same 30px width so all three columns' centers stack. Width is
+     pinned explicitly so the icon size inside can be smaller than the
+     copy/plane icons without breaking the button column. */
+  flex: 0 0 auto;
+  background: transparent;
+  border: none;
+  color: var(--color-slate, var(--tx-2));
+  cursor: pointer;
+  padding: 0;
+  width: 30px;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.access-member-kick .ph { font-size: var(--text-body-sm); line-height: 1; }
+.access-member-kick:hover { color: rgb(220, 38, 38); background: rgba(220, 38, 38, 0.1); }
+.access-member-row-pending .access-member-avatar { opacity: 0.6; }
+
+/* Read-only mode (Phase B5f) — applied when the viewer has read access but
+   not edit access on the active graph. Pinned banner at the top of the
+   canvas + the body.readonly class hides edit affordances. */
+.readonly-banner {
+  position: fixed;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 50;
+  background: rgba(245, 158, 11, 0.95);
+  color: white;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: var(--text-meta);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+.readonly-banner.hidden { display: none; }
+.readonly-signin-btn {
+  background: white;
+  color: rgb(180, 83, 9);
+  border: none;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: var(--text-meta);
+  font-weight: 600;
+  cursor: pointer;
+}
+.readonly-signin-btn:hover { background: rgba(255, 255, 255, 0.85); }
+.readonly-signin-btn.hidden { display: none; }
+.readonly-dismiss-btn {
+  background: transparent;
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: var(--text-meta);
+  font-weight: 600;
+  cursor: pointer;
+}
+.readonly-dismiss-btn:hover { background: rgba(255, 255, 255, 0.15); }
+
+/* Hide edit affordances when in read-only mode. Leave Fit / Tidy / Settings
+   alone — they're navigation, not mutation. */
+body.readonly #btn-new-node,
+body.readonly #empty-state {
+  display: none !important;
+}
+
+/* Read-only inspector. The panel still opens and still reads as the node's
+   record — the fields are just visibly inert, because the server will refuse
+   any write anyway. The editor toolbar goes entirely: its buttons aren't form
+   controls so they can't be disabled, and a row of no-op buttons reads as more
+   of a promise than no toolbar at all. */
+body.panel-readonly .toastui-editor-defaultUI-toolbar { display: none; }
+body.panel-readonly #panel :disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Access-denied state — applied when the viewer is forbidden from the
+   active graph (anon_role=none and not a member). Stronger than readonly:
+   no banner (sign-in won't help), no edit affordances, canvas inert. */
+body.forbidden #btn-new-node,
+body.forbidden .readonly-banner {
+  display: none !important;
+}
+body.forbidden #cy {
+  pointer-events: none;
+}
+.agent-token-warning {
+  margin: 0;
+  font-size: var(--text-meta);
+  color: rgb(180, 83, 9);
+  line-height: 1.4;
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+}
+.agent-token-warning .ph {
+  font-size: var(--text-body);
+  line-height: 1.4;
+  flex: 0 0 auto;
+  margin-top: 1px;
+}
+.agent-token-confirm-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.agent-token-confirm-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: var(--text-meta);
+  padding: 4px 8px;
+}
+/* Trash icon button — replaces the previous "Revoke" text button. Sits on
+   the right of the row, vertically centered, red tint on hover. */
+.agent-token-trash {
+  flex: 0 0 auto;
+  align-self: center;
+  background: transparent;
+  border: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--color-storm, var(--tx-2));
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+.agent-token-trash .ph { font-size: 16px; line-height: 1; }
+.agent-token-trash:hover { color: var(--red); background: color-mix(in srgb, var(--red) 10%, transparent); }
+.agent-token-trash.is-confirming { color: var(--red); }
+
+.agent-token-confirm-btn {
+  flex: 0 0 auto;
+  padding: 6px 14px;
+  background: transparent;
+  border: 1px solid var(--red);
+  color: var(--red);
+  border-radius: var(--radius-buttons, 100px);
+  font-family: var(--font-label);
+  font-size: var(--text-meta);
+  font-weight: 600;
+  letter-spacing: 0.053em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+.agent-token-confirm-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.agent-token-confirm-btn:not(:disabled):hover {
+  background: color-mix(in srgb, var(--red) 12%, transparent);
+}
+.input-with-buttons {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.input-with-buttons input {
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 260px;
+}
+
+/* Generate button — green outlined pill matching the .modal-actions
+   primary pattern. Same shape works for any in-form CTA outside of
+   the bottom action bar. */
+#agent-tokens-mint {
+  flex: 0 0 auto;
+  padding: 7px 18px;
+  background: transparent;
+  border: 1px solid var(--green-strong);
+  border-radius: var(--radius-buttons, 100px);
+  font-family: var(--font-label);
+  font-size: var(--text-body);
+  font-weight: 600;
+  letter-spacing: 0.053em;
+  text-transform: uppercase;
+  color: var(--green-strong);
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+#agent-tokens-mint:hover {
+  background: color-mix(in srgb, var(--green-strong) 10%, transparent);
+}
+
+/* Copy button next to the just-minted plaintext stays as a small icon
+   button — visually paired with the copy button on the graph URL row. */
+#agent-tokens-copy {
+  flex: 0 0 auto;
+  background: transparent;
+  border: 1px solid var(--color-mist, var(--border));
+  border-radius: var(--radius-buttons, 100px);
+  padding: 6px 10px;
+  cursor: pointer;
+  color: var(--color-slate, var(--tx-2));
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+#agent-tokens-copy:hover {
+  color: var(--color-graphite-nav, var(--tx));
+  border-color: var(--color-graphite-nav, var(--tx));
+}
+#agent-tokens-copy .ph { font-size: var(--text-body); line-height: 1; }
+
+#sidebar.collapsed .sb-bottom-label {
+  display: none;
+}
+#sidebar.collapsed .sb-bottom-btn,
+#sidebar.collapsed .sb-account-row {
+  justify-content: center;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+#app-settings-btn.hidden { display: none; }
+
+/* Bottom-row button — gear + "Settings" label centered when expanded;
+   collapses to just the gear icon (still centered) when the sidebar is. */
+.sb-bottom-btn {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: var(--tx-2);
+  font-size: var(--text-body-sm);
+  text-decoration: none;
+  text-align: left;
+  /* Left padding matches .sb-account-row so every bottom-row icon shares
+     one vertical column and the labels share one left edge. */
+  padding: 6px 10px 6px 8px;
+  cursor: pointer;
+}
+.sb-bottom-btn:hover { background: var(--ui); color: var(--tx); }
+.sb-bottom-btn .ph { font-size: 16px; line-height: 1; flex: 0 0 16px; text-align: center; }
+#sidebar.collapsed .sb-bottom-label { display: none; }
+
+/* Collapsed sidebar: skinny strip showing only the expand and gear icons. */
+#sidebar.collapsed {
+  width: 48px;
+}
+#sidebar.collapsed #sidebar-header,
+#sidebar.collapsed #sidebar-list,
+#sidebar.collapsed #sidebar-empty { display: none; }
+
+#sidebar-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 4px 0 12px;
+}
+.sb-item {
+  position: relative;
+  /* Extra left padding reserves a gutter for the privacy lock so the title
+     and timestamp can share the same content X. */
+  padding: 10px 20px 10px 36px;
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.2s ease;
+}
+.sb-item:hover { background: var(--color-blush-tint); }
+.sb-item.active { background: var(--color-blush-tint); }
+.sb-name {
+  color: var(--color-graphite-nav);
+  font-family: var(--font-ui);
+  font-size: var(--text-body);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding-right: 24px;
+}
+.sb-meta {
+  color: var(--color-steel);
+  font-family: var(--font-body);
+  font-size: var(--text-meta);
+  margin-top: 2px;
+}
+.sb-menu-btn {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  color: var(--tx-2);
+  font-size: 18px;
+  line-height: 1;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border-radius: 4px;
+  opacity: 0;
+  transition: opacity 0.1s ease;
+}
+.sb-item:hover .sb-menu-btn,
+.sb-item.active .sb-menu-btn { opacity: 1; }
+.sb-menu-btn:hover { background: var(--ui-2); color: var(--tx); }
+/* Extend the 22px visible glyph to a 36px tap target. Doesn't reach 40px
+   because that would overlap the row's click target on the left; this is
+   as large as it can be without colliding with the row click handler. */
+.sb-menu-btn::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: 0;
+  transform: translateY(-50%);
+  width: 36px;
+  height: 36px;
+}
+
+.sb-section {
+  padding: 18px 20px 6px;
+  font-family: var(--font-label);
+  font-size: var(--text-meta);
+  font-weight: 600;
+  letter-spacing: 0.125em;
+  text-transform: uppercase;
+  color: var(--color-ember-orange);
+}
+.sb-section:first-child { padding-top: 22px; }
+.sb-dot {
+  position: absolute;
+  left: 21px;
+  top: 17px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-ash);
+}
+.sb-item.active .sb-dot { background: var(--color-ember-orange); }
+
+#sidebar-empty {
+  padding: 20px 14px;
+  color: var(--tx-2);
+  font-size: var(--text-body-sm);
+  text-align: center;
+}
+#sidebar-empty.hidden { display: none; }
+
+
+/* Right-side task editing panel — chrome, not canvas. Uses chrome tokens
+   (var(--tx) for text) rather than the per-graph --app-font-color so the
+   editor reads consistently regardless of which graph is open. The
+   per-graph FONT still cascades, but color is decoupled. */
+.panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 600px;
+  min-width: 320px;
+  max-width: 95vw;
+  height: 100vh;
+  background: var(--color-pure-white);
+  border-left: 1px solid var(--color-mist);
+  /* Top padding matches #sidebar-header so "Edit Task" centers on the same
+     y as NEW GRAPH / collapse icon / avatar bar. Bottom padding mirrors the
+     space above the Delete button (body-section margin-bottom 12 + footer
+     padding-top 16 = 28) so the button sits symmetrically between the body
+     editor and the panel's bottom edge. The body editor now reclaims the
+     rest of the vertical space (it was previously bounded by a 96px
+     bottom padding meant to clear the floating toolbar; the toolbar is
+     z-indexed BELOW the panel and was never actually obscuring content). */
+  padding: 18px 24px 28px 24px;
+  overflow-y: auto;
+  z-index: 10;
+  transition: transform 0.7s cubic-bezier(0.19, 1, 0.22, 1);
+  box-shadow: var(--shadow-md);
+  display: flex;
+  flex-direction: column;
+  font-family: var(--app-font);
+  color: var(--color-storm);
+}
+.panel input,
+.panel textarea,
+.panel select { font-family: inherit; color: inherit; }
+/* Status select — the browser's native chevron sits flush against the right
+   edge of the field, which feels cramped against the input border. Replace
+   it with a custom SVG chevron positioned 14px inside the right edge so it
+   has room to breathe. Padding-right reserves the slot. */
+.panel select#field-status {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12' fill='none' stroke='%23717286' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='3 5 6 8 9 5'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  padding-right: 32px;
+}
+.panel .toastui-editor-contents,
+.panel .toastui-editor-contents *,
+.panel .ProseMirror,
+.panel .ProseMirror * {
+  font-family: var(--app-font) !important;
+  color: var(--tx) !important;
+}
+.panel.hidden { transform: translateX(100%); }
+.panel.resizing { transition: none; user-select: none; }
+
+#panel-resize-handle {
+  position: absolute;
+  top: 0;
+  left: -3px;
+  width: 6px;
+  height: 100%;
+  cursor: ew-resize;
+  z-index: 11;
+}
+#panel-resize-handle:hover,
+.panel.resizing #panel-resize-handle {
+  background: color-mix(in srgb, var(--blue) 25%, transparent);
+}
+
+#task-form {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.bg-image-row {
+  margin-bottom: 12px;
+}
+.bg-image-row.hidden { display: none; }
+.bg-image-label {
+  display: block;
+  font-size: var(--text-body-sm);
+  color: var(--tx-2);
+}
+.bg-image-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  margin-top: 4px;
+  background: var(--ui);
+  border: 1px solid var(--ui-3);
+  border-radius: 4px;
+  color: var(--app-font-color);
+  font-size: var(--text-body);
+  font-family: var(--app-font);
+  cursor: pointer;
+  min-height: 22px;
+}
+.bg-image-field:hover { border-color: var(--blue); }
+.bg-image-field:focus { outline: none; border-color: var(--blue); }
+.bg-image-field.dragover {
+  border-color: var(--blue);
+  background: var(--ui-2);
+}
+.bg-image-field-icon {
+  flex: 0 0 auto;
+  color: var(--tx-3);
+  font-size: 16px;
+  line-height: 1;
+}
+.bg-image-field-text {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.bg-image-field-text.placeholder { color: var(--tx-3); }
+.bg-image-clear {
+  flex: 0 0 auto;
+  background: transparent;
+  border: none;
+  color: var(--tx-2);
+  font-size: 18px;
+  line-height: 1;
+  padding: 0 4px;
+  cursor: pointer;
+}
+.bg-image-clear:hover { color: var(--tx); }
+.bg-image-clear.hidden { display: none; }
+/* The native file picker is hidden — clicks come from .bg-image-field.
+   `!important` overrides `form input { display: block; }` from the panel
+   form rule (just `hidden` attribute or `[hidden]` would be stomped). */
+.bg-image-file-input { display: none !important; }
+
+.body-section {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 240px;
+  margin-bottom: 12px;
+}
+.body-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+.body-label {
+  font-size: var(--text-body-sm);
+  color: var(--tx-2);
+}
+
+.mode-toggle {
+  display: inline-flex;
+  background: var(--ui);
+  border-radius: 6px;
+  padding: 2px;
+  gap: 2px;
+}
+.mode-btn {
+  padding: 4px 10px;
+  font-size: var(--text-meta);
+  background: transparent;
+  color: var(--tx-2);
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.mode-btn:hover { color: var(--tx); }
+.mode-btn.active {
+  background: var(--ui-2);
+  color: var(--tx);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.3);
+}
+
+#rich-editor { flex: 1; min-height: 240px; }
+#rich-editor.hidden { display: none; }
+#raw-editor {
+  flex: 1;
+  min-height: 240px;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+}
+#raw-editor.hidden { display: none; }
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  /* Match #sidebar-header inner button height (28px) so the header's
+     centerline lands at y=32, aligning with NEW GRAPH / collapse / avatars. */
+  min-height: 28px;
+  /* Mirror sidebar-header padding-bottom (14) + #sidebar-list padding-top (4)
+     + .sb-section:first-child padding-top (22) = 40px, so the first form
+     label ("Title") lands on the same y as the "MY GRAPHS" section label. */
+  margin-bottom: 40px;
+}
+.panel-header h2 {
+  flex: 1;
+  font-family: var(--font-display);
+  font-size: var(--text-heading-sm);
+  font-weight: 400;
+  letter-spacing: -0.04em;
+  line-height: 1.1;
+  color: var(--color-midnight-ink);
+}
+.panel-header button {
+  background: none;
+  border: none;
+  /* No vertical padding — the explicit 28px height sets the hit box, matching
+     the sidebar header's icon-button size. Left padding extends the hit area
+     inward. Negative right margin counters the ✕ glyph's intrinsic right
+     side-bearing so the visible glyph lands flush with the panel's right
+     content edge (matching input/select right borders). */
+  padding: 0 0 0 12px;
+  margin-right: -4px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  color: var(--tx-3);
+  font-size: var(--text-heading);
+  cursor: pointer;
+  line-height: 1;
+}
+.panel-header button:hover { color: var(--tx); }
+
+.save-status {
+  font-size: var(--text-meta);
+  color: var(--tx-2);
+  transition: opacity 0.6s ease;
+  opacity: 1;
+  white-space: nowrap;
+}
+.save-status[data-kind="saved"] { color: var(--green); }
+.save-status[data-kind="error"] { color: var(--red); }
+.save-status[data-kind="hint"] { color: var(--tx-3); font-style: italic; }
+.save-status.saved-fade { opacity: 0; }
+
+form label {
+  display: block;
+  margin-bottom: 12px;
+  font-size: var(--text-body-sm);
+  color: var(--tx-2);
+}
+form input, form textarea, form select {
+  display: block;
+  width: 100%;
+  margin-top: 4px;
+  padding: 8px;
+  background: var(--ui);
+  border: 1px solid var(--ui-3);
+  border-radius: 4px;
+  color: var(--app-font-color);
+  font-size: var(--text-body);
+  font-family: var(--app-font);
+}
+form textarea {
+  resize: vertical;
+  min-height: 200px;
+  line-height: 1.5;
+}
+form input:focus, form textarea:focus, form select:focus {
+  outline: none;
+  border-color: var(--blue);
+}
+
+button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: var(--text-body-sm);
+}
+
+/* Toast UI Editor dark-theme tweaks to align with Flexoki */
+.toastui-editor-defaultUI {
+  border-color: var(--ui-3) !important;
+  border-radius: 6px !important;
+}
+.toastui-editor-dark .toastui-editor-defaultUI,
+.toastui-editor-dark .toastui-editor-toolbar,
+.toastui-editor-dark .toastui-editor-main,
+.toastui-editor-dark .toastui-editor-mode-switch {
+  background: var(--ui) !important;
+  color: var(--tx) !important;
+}
+.toastui-editor-dark .toastui-editor-contents,
+.toastui-editor-dark .ProseMirror {
+  background: var(--ui) !important;
+  color: var(--tx) !important;
+}
+.toastui-editor-dark .toastui-editor-toolbar-icons {
+  filter: brightness(1.1);
+}
+
+/* Toast UI's default toolbar icons render at 32×32 with the sprite scaled to
+   match — visually heavy next to the 13px "Body" label. `zoom` shrinks the
+   button box, sprite image, and background-position together (no need to
+   override each per-icon class). Dividers get tighter horizontal margins so
+   the heading group doesn't float in 24px of empty space, and the toolbar
+   itself has a smaller side padding so the first button isn't stranded 25px
+   from the edge. */
+.toastui-editor-toolbar-icons { zoom: 0.8; }
+/* Toast UI's flex toolbar uses align-items: normal which leaves the zoomed
+   icons stuck to the top of the 44px group — visible as ~8px more space
+   below the icons than above. Center them vertically. */
+.toastui-editor-defaultUI-toolbar,
+.toastui-editor-defaultUI-toolbar .toastui-editor-toolbar-group {
+  align-items: center !important;
+}
+.toastui-editor-defaultUI-toolbar {
+  padding: 0 6px !important;
+}
+.toastui-editor-defaultUI-toolbar .toastui-editor-toolbar-divider {
+  margin: 0 4px !important;
+  height: 20px;
+}
+/* Toast UI's default `.active` style sets the border to ~#f7f9fc, which is
+   indistinguishable from the toolbar background. Replace with a visible
+   cobalt-link tint + outline so the user can tell when bold/italic/list
+   mode is engaged at the cursor (same chromatic role as the checked
+   checkbox). */
+.toastui-editor-toolbar-icons.active,
+.toastui-editor-toolbar-icons.active:hover {
+  background-color: color-mix(in srgb, var(--color-cobalt-link) 14%, transparent) !important;
+  border-color: var(--color-cobalt-link) !important;
+}
+/* Align the list marker with the first line of text rather than the
+   vertical center of the whole li (which drifts noticeably once an item
+   wraps to 2+ lines). Toast UI's defaults: ul ::before is 5px tall with
+   `margin-top: 6px` and no `top`; ol ::before is text with no `top` but a
+   computed 1lh-tall inline box.
+   - ul: pin top so the 5px dot is centered on line 1, and clear Toast UI's
+     margin-top so it doesn't stack on top of our centering math.
+   - ol: keep the 1lh-tall marker box anchored to the top of the li so its
+     inline baseline matches line 1's text baseline. */
+.toastui-editor-contents ul > li::before {
+  top: calc((1lh - 5px) / 2) !important;
+  margin-top: 0 !important;
+}
+.toastui-editor-contents ol > li::before {
+  top: 0 !important;
+}
+
+/* Edge modal */
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+  display: flex;
+  /* Scroll the backdrop (not .modal-content) when the modal is taller
+     than the viewport — keeps the scrollbar at the viewport edge instead
+     of inside the modal box (which would steal width and break the
+     right-column alignment between share-row icons and access-row carets).
+     margin: auto on .modal-content keeps it centered when it fits and
+     pinned to the top once content overflows.
+     align-items: flex-start (instead of center) is required so an
+     overflowing child stays reachable at the top — with align-items:
+     center, the top is pushed off-screen and unscrollable. */
+  align-items: flex-start;
+  justify-content: center;
+  overflow-y: auto;
+  padding: 32px 0;
+  z-index: 20;
+}
+.modal.hidden { display: none; }
+.modal-content {
+  background: var(--color-pure-white);
+  border: none;
+  padding: 32px;
+  border-radius: var(--radius-cards);
+  min-width: 280px;
+  /* margin-block: auto centers vertically when content fits the viewport;
+     collapses to 0 (pinned to top) once .modal starts scrolling. */
+  margin-block: auto;
+  box-shadow: var(--shadow-md);
+  position: relative;
+}
+/* Confirm dialog opens on top of another modal (graph-modal, agent
+   tokens, etc.) and usually carries one title + one line of body +
+   two buttons. Make it visibly smaller than the parent so the layered
+   stack reads clearly. */
+#app-confirm-modal .modal-content {
+  min-width: 0;
+  max-width: 360px;
+  padding: 22px 24px;
+}
+/* Slow expressive enter per mymind motion — fast-in / slow-out at 0.7s. */
+@keyframes gt-modal-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.modal:not(.hidden) .modal-content {
+  animation: gt-modal-in 0.7s cubic-bezier(0.19, 1, 0.22, 1);
+}
+.modal-content h3 {
+  margin: 0 0 6px;
+  color: var(--color-midnight-ink);
+  font-family: var(--font-display);
+  font-size: var(--text-heading-sm);
+  font-weight: 400;
+  line-height: 1.1;
+  letter-spacing: -0.04em;
+  text-wrap: balance;
+}
+/* Metadata caption — sits at the top-right of the modal, above the heading.
+   Right-aligned and quieter than the heading so the title remains the
+   primary focus. */
+/* Width: fit-content + margin-left: auto pins the block to the right edge
+   while keeping its hit area the size of the text — so hover/click only
+   fires when the cursor is actually over the date, not anywhere along the
+   row. */
+.modal-subtitle {
+  display: block;
+  width: fit-content;
+  margin: 0 0 6px auto;
+  font-family: var(--font-body);
+  font-size: var(--text-meta);
+  color: var(--color-steel);
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.15s ease;
+}
+.modal-subtitle:hover { color: var(--color-graphite-nav); }
+.modal-content p {
+  margin: 0 0 16px;
+  font-family: var(--font-body);
+  font-size: var(--text-caption);
+  line-height: 1.55;
+  color: var(--color-storm);
+  text-wrap: pretty;
+}
+.modal-actions { display: flex; gap: 8px; }
+/* Default modal button = Slate Ghost Pill (Cancel / Dismiss / Reset).
+   Reference rule: every button shape is a 100px pill. */
+.modal-actions button {
+  flex: 1;
+  padding: 7px 18px;
+  background: transparent;
+  color: var(--color-slate);
+  border: 1px solid var(--color-slate);
+  border-radius: var(--radius-buttons);
+  font-family: var(--font-label);
+  font-size: var(--text-body);
+  font-weight: 600;
+  letter-spacing: 0.053em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: color 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
+}
+.modal-actions button:hover {
+  color: var(--color-graphite-nav);
+  border-color: var(--color-graphite-nav);
+}
+/* Form-style modal (graph edit) */
+.modal-content-form {
+  min-width: 360px;
+  max-width: 520px;
+  width: 100%;
+  box-sizing: border-box;
+}
+/* Form-modal spacing rhythm — three levels of vertical gap:
+   - --space-5 (20px) after a title/eyebrow (graph h3 or section header)
+   - --space-2 (8px)  between sibling rows inside a section
+   - --space-8 (32px) between distinct sections
+   This makes the title→first-row gap visibly larger than the row→row
+   gap, the way a typeset document structures headings. */
+.modal-field { display: block; margin-bottom: var(--space-8); }
+.modal-content-form h3 { margin-bottom: var(--space-5); }
+/* Section eyebrow — Nunito-SemiBold uppercase ember tracked +0.125em.
+   The design uses ember eyebrows sparingly (one per section, as visual
+   punctuation). Only fields whose meaning isn't self-evident from a
+   placeholder or from the controls themselves get one. Generous bottom
+   margin signals "this label belongs to the block below, not the row
+   immediately under it." */
+.modal-field > span:first-child {
+  display: block;
+  /* Section title → first row uses the "after-title" gap (more breathing
+     room than between-row gap) so the eyebrow visibly groups with the
+     content below. */
+  margin-bottom: var(--space-5);
+  /* Small ember eyebrow — Nunito (--font-label) paired with uppercase +
+     tracking. The smaller body-size renders sleeker than the 15px sentence-
+     case variant; the sentence-case version at 15px was reading too loud
+     and Inter's strokes lost the "label" quality. */
+  font-family: var(--font-label);
+  font-size: var(--text-body);
+  font-weight: 600;
+  color: var(--color-ember-orange);
+  text-transform: uppercase;
+  letter-spacing: 0.125em;
+}
+/* "Flush" fields skip the eyebrow entirely — placeholder/control
+   communicates the purpose. Used for Name, Description, share row.
+   These are rows within the implicit "top section" introduced by the
+   graph-title h3, so they get the tight in-section row gap. */
+.modal-field-flush { margin-bottom: var(--space-2); }
+/* When a flush row is the last one before a real section (e.g., share
+   URL → Access), bump the gap back up to the between-sections rhythm
+   so the section break reads correctly. Margin-collapsing takes the
+   larger of the two values, so the 32px on the next section wins. */
+.modal-field-flush + .modal-field:not(.modal-field-flush) {
+  margin-top: var(--space-8);
+}
+.modal-field input,
+.modal-field textarea {
+  width: 100%;
+  background: var(--color-pure-white);
+  border: 1px solid var(--color-mist);
+  border-radius: var(--radius-cardsalt);
+  color: var(--color-graphite-nav);
+  font-family: var(--font-ui);
+  font-size: var(--text-body);
+  padding: 10px 14px;
+  outline: none;
+  resize: vertical;
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+/* Cap the resizable textarea so it can't be dragged to a height that
+   pushes the rest of the form off-screen. Modal-content scrolls as a
+   safety net, but the cap keeps the form layout sane during normal use. */
+.modal-field textarea { max-height: 240px; }
+.modal-field input::placeholder,
+.modal-field textarea::placeholder { color: var(--color-ash); }
+/* Cobalt focus — the only chromatic non-orange interactive color. */
+.modal-field input:focus,
+.modal-field textarea:focus {
+  border-color: var(--color-cobalt-link);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--blue) 18%, transparent);
+}
+/* Dynamic / monospace-ish strings get tabular numerals so digits don't
+   reflow as values change (relative times, share URL). */
+.sb-meta,
+#graph-modal-url { font-variant-numeric: tabular-nums; }
+.modal-body-text,
+.settings-heading p { text-wrap: pretty; }
+.modal-error {
+  margin: 0 0 12px;
+  font-size: var(--text-body-sm);
+  color: var(--red);
+}
+.modal-error.hidden { display: none; }
+
+/* Inline-editable heading. The h3 carries the modal's title styling already;
+   we add a hover/focus background to signal "click to edit" and a placeholder
+   for the empty state. Tab/Enter blur to commit (handled in JS).
+   margin-left == -padding-left so the hover background extends symmetrically
+   around the text without offsetting the text from the modal's left edge. */
+.editable-heading {
+  outline: none;
+  border-radius: 6px;
+  padding: 2px 6px;
+  margin-left: -6px;
+  cursor: text;
+  transition: background-color 0.15s ease;
+  word-break: break-word;
+}
+/* Graph-edit modal title is the lone heading that needs to sit a step
+   above the generic modal h3 — uses --text-heading-lg (24px) rather
+   than --text-heading (22px). Selector qualified with .modal-content to
+   beat the .modal-content h3 specificity (0,1,1 vs 0,2,0). */
+.modal-content .editable-heading { font-size: var(--text-heading-lg); }
+.editable-heading:hover { background: var(--color-blush-tint); }
+.editable-heading:focus { background: var(--color-blush-tint); }
+.editable-heading:empty::before {
+  content: attr(data-placeholder);
+  color: var(--color-ash);
+  pointer-events: none;
+}
+
+/* Centered action group — primary on the right, danger to its left,
+   both grouped at the modal's center axis. The reference uses centered
+   primary actions (the Outlined Ember pill is the brand "moment"). */
+.modal-actions-center {
+  justify-content: center;
+  gap: 28px;
+  margin-top: 28px;
+}
+/* Equal width so the centered pair stays symmetric — "DELETE" text is wider
+   than "SAVE", which would otherwise push the group off-center by a few px
+   and break alignment with the Text/Background columns above. */
+.modal-actions-center button { flex: 0 0 auto; min-width: 96px; }
+
+/* Primary CTA — Green Outlined Pill (constructive: Save / Confirm). */
+.modal-actions button.primary {
+  background: transparent;
+  border-color: var(--green-strong);
+  color: var(--green-strong);
+}
+.modal-actions button.primary:hover {
+  background: color-mix(in srgb, var(--green-strong) 10%, transparent);
+  color: var(--green-strong);
+  border-color: var(--green-strong);
+}
+/* Danger — Red Outlined Pill (destructive: Delete / Rotate). */
+.modal-actions button.danger {
+  background: transparent;
+  border-color: var(--red);
+  color: var(--red);
+}
+.modal-actions button.danger:hover {
+  background: color-mix(in srgb, var(--red) 10%, transparent);
+  color: var(--red);
+  border-color: var(--red);
+}
+
+/* Sharing row inside the graph-edit modal — input is text-only, side
+   buttons take the small Slate Ghost Pill treatment. */
+.share-row { display: flex; gap: 8px; }
+.share-row input {
+  flex: 1;
+  background: var(--color-pure-white);
+  border: 1px solid var(--color-mist);
+  border-radius: var(--radius-cardsalt);
+  color: var(--color-cobalt-link); /* the URL is a link, hence cobalt */
+  font-family: var(--font-ui);
+  font-size: var(--text-body-sm);
+  padding: 9px 14px;
+  outline: none;
+}
+.share-row input:focus { border-color: var(--color-cobalt-link); }
+/* Bare icon buttons — no enclosing pill. The icon glyph alone is the
+   affordance; hover darkens the color from slate to graphite. */
+.share-row button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  color: var(--color-slate);
+  border: none;
+  padding: 0 6px;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+.share-row button .ph {
+  font-size: 18px;
+  line-height: 1;
+}
+.share-row button:hover {
+  color: var(--color-graphite-nav);
+}
+.suppress-row input[type="checkbox"] {
+  /* Reset to a custom box — the OS-default checkbox renders large on macOS
+     even when width/height is set, because the system style ignores it.
+     padding + font-size resets are critical: this checkbox is inside
+     `.modal-field` whose `input` selector applies 10px 14px padding +
+     15px font-size, which would otherwise inflate the box to ~28x20px. */
+  appearance: none;
+  -webkit-appearance: none;
+  flex-shrink: 0;
+  width: 12px;
+  height: 12px;
+  padding: 0;
+  font-size: 0;
+  line-height: 0;
+  margin: 0;
+  cursor: pointer;
+  background: var(--bg-input);
+  border: 1px solid var(--border-strong);
+  border-radius: 2px;
+  position: relative;
+  transition-property: background-color, border-color, box-shadow;
+  transition-duration: 120ms;
+  transition-timing-function: cubic-bezier(0.2, 0, 0, 1);
+}
+.suppress-row input[type="checkbox"]:hover { border-color: var(--tx-3); }
+.suppress-row input[type="checkbox"]:checked {
+  /* Cobalt is the only "filled" interactive color in the system —
+     ember stays outline-only. */
+  background: var(--color-cobalt-link);
+  border-color: var(--color-cobalt-link);
+}
+.suppress-row input[type="checkbox"]:checked::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='white'><path d='M6.4 11.2L2.6 7.4 4 6l2.4 2.4L11.6 3.2 13 4.6z'/></svg>") center / 8px 8px no-repeat;
+}
+/* Extend the 12px visible box to a ~24px hit area without affecting layout. */
+.suppress-row input[type="checkbox"]::before {
+  content: "";
+  position: absolute;
+  inset: -6px;
+}
+.appearance-grid {
+  display: flex;
+  flex-direction: column;
+  /* In-section row gap — matches .access-controls so the two sections
+     share the same row-to-row rhythm. */
+  gap: var(--space-2);
+}
+.appearance-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.appearance-label {
+  flex: 0 0 100px;
+  font-family: var(--font-ui);
+  font-size: var(--text-body);
+  font-weight: 500;
+  color: var(--color-storm);
+  /* Override .modal-field > span:first-child uppercase + ember */
+  text-transform: none;
+  letter-spacing: 0;
+  margin: 0;
+}
+/* Custom font picker — native <select> popups ignore per-option font-family
+   on macOS, so we replace the select with a controlled trigger + menu we
+   can fully style. Trigger reads as a bare label + chevron (no enclosing
+   container) to match the original minimal aesthetic. */
+.font-picker {
+  position: relative;
+  display: inline-block;
+}
+.font-picker-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  border: none;
+  padding: 0;
+  font-family: var(--font-ui);
+  font-size: var(--text-body);
+  color: var(--color-graphite-nav);
+  cursor: pointer;
+  outline: none;
+  transition: color 0.2s ease;
+}
+.font-picker-trigger:hover { color: var(--color-midnight-ink); }
+.font-picker-trigger:focus-visible {
+  box-shadow: inset 0 -1px 0 0 var(--color-cobalt-link);
+}
+.font-picker-value {
+  /* Inline font-family is set by JS to mirror the chosen option's font. */
+  font-family: inherit;
+}
+.font-picker-caret {
+  display: inline-flex;
+  color: var(--color-steel);
+  line-height: 0;
+}
+.font-picker-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  min-width: 160px;
+  background: var(--color-pure-white);
+  border: 1px solid var(--color-mist);
+  border-radius: var(--radius-cards);
+  box-shadow: var(--shadow-md);
+  padding: 6px;
+  z-index: 25;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.font-picker-menu.hidden { display: none; }
+.font-picker-option {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  padding: 8px 12px;
+  font-size: var(--text-body);
+  color: var(--color-graphite-nav);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+.font-picker-option:hover { background: var(--color-blush-tint); }
+.font-picker-option.active {
+  background: var(--color-blush-tint);
+  color: var(--color-ember-orange);
+}
+
+/* Two-column appearance row: Text swatches + Background swatches side-by-side.
+   Gap matches `.modal-actions-center` gap so the Background column's left
+   edge lines up with the Save button's left edge, and the Text column's
+   right edge with the Delete button's right edge. */
+.appearance-color-row {
+  display: flex;
+  gap: 28px;
+  align-items: flex-start;
+  /* Mirrors the +4px nudge on .access-members-section so the gap from
+     the Font row above matches the Mode → email gap in Access (both 12px
+     total: 8px section row-gap + 4px sub-block breathing room). */
+  margin-top: 4px;
+}
+.appearance-color-group {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+.appearance-color-group .appearance-label { flex: 0 0 auto; }
+/* Gap leaves 8px clearance between an active swatch's 2px outset ring and
+   its neighbor's border (gap 10 - 2 = 8px). */
+.appearance-swatches {
+  display: grid;
+  grid-template-columns: repeat(5, 22px);
+  gap: 10px;
+}
+.appearance-swatches .color-swatch {
+  /* Explicit display + aspect-ratio + padding: 0 to defeat any inherited
+     button vertical-padding / line-height that would render the box as a
+     rectangle instead of a true 22x22 square. */
+  display: block;
+  width: 22px;
+  height: 22px;
+  aspect-ratio: 1 / 1;
+  padding: 0;
+  background-clip: padding-box;
+}
+.modal-body-text {
+  margin: 0 0 18px;
+  font-family: var(--font-body);
+  font-size: var(--text-body);
+  line-height: 1.55;
+  color: var(--color-storm);
+}
+.suppress-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  margin: 0 0 16px;
+  font-size: var(--text-body-sm);
+  color: var(--tx-2);
+}
+.suppress-row input[type="checkbox"] {
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  cursor: pointer;
+}
+
+/* Bottom toolbar */
+#bottom-bar.hidden { display: none; }
+#bottom-bar {
+  position: fixed;
+  /* 18px puts the gap below the toolbar roughly equal to the gap between
+     the toolbar top and the kanban column bottoms (kanban padding is 80px;
+     toolbar pill is ~44px tall, so (80-44)/2 ≈ 18). Graph view is
+     unaffected — the canvas extends behind the toolbar in that view. */
+  bottom: 18px;
+  /* Center in the FULL canvas region (sidebar-right → viewport-right). The
+     toolbar stays at this canvas-centered position regardless of whether
+     the right side panel is open — the panel's higher z-index (10) just
+     covers it. Keeps toolbar position unaffected by panel collapse/expand. */
+  left: calc(var(--sidebar-w) + (100vw - var(--sidebar-w)) / 2);
+  /* JS overrides this transform with `translateX(-50%) scale(N)` when the
+     toolbar's natural width exceeds the canvas width (very narrow
+     viewports). At normal widths the scale stays at 1. */
+  transform: translateX(-50%);
+  transform-origin: 50% 100%;
+  display: flex;
+  align-items: center;
+  background: var(--color-pure-white);
+  border: 1px solid var(--color-mist);
+  border-radius: var(--radius-buttons);
+  padding: 6px 12px;
+  box-shadow: var(--shadow-sm);
+  /* Below the side panel (z-index: 10) and the right-side rename/settings
+     modals (z-index: 20) so neither is covered by toolbar buttons. */
+  z-index: 8;
+}
+
+.tb-slot {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.tb-slot.hidden { display: none; }
+
+.tb-divider {
+  width: 1px;
+  height: 16px;
+  background: var(--color-mist);
+  margin: 0 8px;
+}
+
+.tb-hint,
+.tb-direction,
+.tb-direction-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-ui);
+  font-size: var(--text-body-sm);
+  font-weight: 500;
+  color: var(--color-storm);
+  padding: 6px 12px;
+  white-space: nowrap;
+}
+/* Selection count — ember-orange to match the brand-mark eyebrow color
+   (MY GRAPHS, ACCESS, etc.). Tabular nums so the badge width is stable
+   as the count ticks between single + double digits. */
+.tb-count {
+  font-family: var(--font-body);
+  font-size: var(--text-meta);
+  color: var(--color-ember-orange);
+  padding: 0 6px;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.tb-direction { color: var(--color-storm); font-variant-numeric: tabular-nums; }
+.tb-direction-icon {
+  display: inline-flex;
+  width: 16px;
+  height: 16px;
+  color: currentColor;
+  flex-shrink: 0;
+}
+.tb-direction-icon svg {
+  display: block;
+  width: 16px;
+  height: 16px;
+}
+.tb-selection-summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--color-ember-orange);
+  font-variant-numeric: tabular-nums;
+}
+.tb-save-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: 12px;
+  color: var(--tx-2);
+}
+
+.tool-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: transparent;
+  color: var(--color-storm);
+  border: 1px solid transparent;
+  border-radius: var(--radius-buttons);
+  font-family: var(--font-ui);
+  font-size: var(--text-body-sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+.tool-btn:hover {
+  background: var(--color-blush-tint);
+  color: var(--color-graphite-nav);
+}
+/* Active state = ember outlined chip — the toolbar's primary moment. */
+.tool-btn.active {
+  background: transparent;
+  color: var(--color-ember-orange);
+  border-color: var(--color-ember-orange);
+}
+.tool-btn svg { flex-shrink: 0; }
+
+.color-palette {
+  position: fixed;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  background: var(--color-pure-white);
+  border: 1px solid var(--color-mist);
+  border-radius: var(--radius-cards);
+  box-shadow: var(--shadow-md);
+  z-index: 24;
+}
+.color-palette.hidden { display: none; }
+.color-palette-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 18px;
+}
+.color-palette-title {
+  font-family: var(--font-ui);
+  font-size: var(--text-meta);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-ember-orange);
+}
+.color-palette-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 28px);
+  gap: 12px;
+}
+.color-swatch {
+  width: 28px;
+  height: 28px;
+  aspect-ratio: 1;
+  border: 1px solid var(--color-mist);
+  border-radius: 4px;
+  cursor: pointer;
+  outline: none;
+}
+.color-swatch:hover,
+.color-swatch:focus-visible,
+.color-swatch.active {
+  box-shadow: 0 0 0 2px var(--color-graphite-nav);
+}
+
+/* Settings overlay (Cmd+K) */
+.settings-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 18vh;
+  z-index: 30;
+}
+.settings-overlay.hidden { display: none; }
+.settings-card {
+  width: 420px;
+  max-width: calc(100vw - 32px);
+  background: var(--color-pure-white);
+  border: 1px solid var(--color-mist);
+  border-radius: var(--radius-cards);
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+}
+.settings-heading {
+  padding: 22px 24px 16px;
+  border-bottom: 1px solid var(--color-mist);
+}
+.settings-heading h3 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--text-heading);
+  font-weight: 400;
+  letter-spacing: -0.04em;
+  line-height: 1.1;
+  color: var(--color-midnight-ink);
+}
+.settings-heading p {
+  margin: 6px 0 0;
+  font-family: var(--font-body);
+  font-size: var(--text-body-sm);
+  line-height: 1.55;
+  color: var(--color-steel);
+}
+.settings-search {
+  display: block;
+  width: 100%;
+  padding: 14px 18px;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--color-mist);
+  color: var(--color-graphite-nav);
+  font-family: var(--font-body);
+  font-size: var(--text-body);
+  outline: none;
+}
+.settings-search::placeholder { color: var(--tx-3); }
+.settings-results {
+  max-height: 320px;
+  overflow-y: auto;
+  padding: 6px;
+}
+.settings-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 10px 14px;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  color: var(--color-graphite-nav);
+  font-family: var(--font-ui);
+  font-size: var(--text-body);
+  text-align: left;
+  cursor: pointer;
+}
+.settings-item + .settings-item { margin-top: 2px; }
+.settings-item:hover { background: var(--color-blush-tint); }
+.settings-item.active { background: var(--color-blush-tint); }
+.settings-item.danger { color: var(--red-strong, #b91c1c); }
+.settings-item.danger:hover,
+.settings-item.danger.active { background: color-mix(in srgb, var(--red-strong, #b91c1c) 8%, transparent); }
+.settings-color-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  border: 1px solid var(--ui-3);
+  display: inline-block;
+}
+
+/* Chip outer box stretches to match its sibling text label's line-box, so
+   text-bottom and chip-bottom line up across every toolbar slot. The inner
+   monospace glyph is then vertically centered by the inline-flex centering. */
+kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-self: stretch;
+  box-sizing: border-box;
+  padding: 0 6px;
+  font: 11px/1 ui-monospace, 'SF Mono', monospace;
+  color: var(--color-steel);
+  background: var(--color-blush-tint);
+  border: 1px solid var(--color-mist);
+  border-radius: 4px;
+}
+/* The rule above is app chrome — toolbar keycaps and settings-menu shortcuts —
+   but it is a bare element selector, so it also reaches every <kbd> a node body
+   writes into its markdown, on the reader and the node permalink alike. At
+   chrome size that is 11px inside 16px prose, the `font` shorthand drops any
+   surrounding bold or italic, and inline-flex makes an atomic box that can't
+   break across lines. Content keeps the keycap look, at reading scale. */
+.toastui-editor-contents kbd {
+  display: inline;
+  padding: 0.1em 0.4em;
+  font-family: ui-monospace, 'SF Mono', monospace;
+  font-size: 0.9em;
+  font-weight: inherit;
+  font-style: inherit;
+  line-height: inherit;
+  color: var(--tx-2);
+}
+
+/* Inline node title input overlay — sits inside the cytoscape node */
+#node-title-overlay {
+  position: fixed;
+  z-index: 9;
+  background: transparent;
+  border: none;
+  outline: none;
+  padding: 0;
+  margin: 0;
+  color: var(--tx);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: var(--text-body-sm);
+  line-height: 1.2;
+  text-align: center;
+  max-width: 140px;
+  word-wrap: break-word;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  caret-color: var(--blue);
+  transform: translate(-50%, -50%);
+  user-select: text;
+}
+#node-title-overlay.hidden { display: none; }
+#node-title-overlay:empty::before {
+  content: attr(data-placeholder);
+  color: var(--tx-3);
+  pointer-events: none;
+}
+
+#edge-curve-handle {
+  position: fixed;
+  z-index: 12;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--tx);
+  border: 2px solid var(--bg);
+  box-shadow: 0 0 0 1px var(--ui-3), 0 4px 10px rgba(0,0,0,0.45);
+  transform: translate(-50%, -50%);
+  cursor: grab;
+  touch-action: none;
+}
+#edge-curve-handle.dragging {
+  cursor: grabbing;
+}
+#edge-curve-handle.hidden {
+  display: none;
+}
+
+/* Cmd+drag selection rubber band — cobalt is the only chromatic
+   non-orange interactive color in the system. */
+.cmd-box {
+  position: fixed;
+  pointer-events: none;
+  background: color-mix(in srgb, var(--blue) 10%, transparent);
+  border: 1px dashed var(--blue);
+  z-index: 8;
+}
+.cmd-box.hidden { display: none; }
+
+/* Find / search bar (Cmd/Ctrl+F) — floats at the top of the canvas band,
+   the front door to KB search (#171/#172). Mirrors the settings-card surface
+   tokens so it reads as the same family as the other floating chrome. */
+.search-bar {
+  position: fixed;
+  top: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 560px;
+  max-width: calc(100vw - 32px);
+  background: var(--color-pure-white);
+  border: 1px solid var(--color-mist);
+  border-radius: var(--radius-cards);
+  box-shadow: var(--shadow-md);
+  z-index: 31;
+  overflow: hidden;
+}
+.search-bar.hidden { display: none; }
+.search-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 10px var(--space-4);
+}
+.search-icon {
+  flex: 0 0 auto;
+  color: var(--color-steel);
+}
+.search-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--color-graphite-nav);
+  font-family: var(--font-body);
+  font-size: var(--text-body);
+}
+.search-input::placeholder { color: var(--tx-3); }
+.search-count {
+  flex: 0 0 auto;
+  font-family: ui-monospace, 'SF Mono', monospace;
+  font-size: var(--text-meta);
+  color: var(--color-steel);
+  min-width: 2.5em;
+  text-align: right;
+}
+.search-scope {
+  flex: 0 0 auto;
+  display: inline-flex;
+  background: var(--color-blush-tint);
+  border: 1px solid var(--color-mist);
+  border-radius: var(--radius-full);
+  padding: 2px;
+}
+.search-scope-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: none;
+  background: transparent;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  font-family: var(--font-ui);
+  font-size: var(--text-meta);
+  color: var(--color-steel);
+  cursor: pointer;
+}
+.search-scope-btn.active {
+  background: var(--color-pure-white);
+  color: var(--color-graphite-nav);
+  box-shadow: var(--shadow-sm);
+}
+.search-scope-btn:disabled { cursor: not-allowed; opacity: 0.6; }
+.search-soon {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-ember-orange);
+  border: 1px solid currentColor;
+  border-radius: var(--radius-full);
+  padding: 0 4px;
+  line-height: 1.4;
+}
+.search-results {
+  max-height: 320px;
+  overflow-y: auto;
+  border-top: 1px solid var(--color-mist);
+  padding: 6px;
+}
+.search-results:empty { display: none; }
+.search-result {
+  display: block;
+  width: 100%;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  color: var(--color-graphite-nav);
+}
+.search-result + .search-result { margin-top: 2px; }
+.search-result:hover { background: var(--color-blush-tint); }
+.search-result.active { background: var(--color-blush-tint); }
+.search-result-title {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  font-family: var(--font-ui);
+  font-size: var(--text-body);
+  line-height: 1.3;
+}
+.search-result-snippet {
+  margin-top: 2px;
+  font-family: var(--font-body);
+  font-size: var(--text-body-sm);
+  line-height: 1.4;
+  color: var(--color-steel);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.search-result mark {
+  background: color-mix(in srgb, var(--color-ember-orange) 24%, transparent);
+  color: inherit;
+  border-radius: 2px;
+}
+.search-empty {
+  padding: 10px 12px;
+  font-family: var(--font-body);
+  font-size: var(--text-body-sm);
+  color: var(--color-steel);
+}
+
+/* The scope toggle's "soon" badge hides once cross-graph search is actually
+   available to this viewer (signed in). */
+.search-soon.hidden { display: none; }
+
+/* Cross-graph hit chip — names the OTHER graph a result lives in, so a
+   commit's graph-switch is never a surprise. */
+.search-result-graph {
+  flex: 0 0 auto;
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-body);
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  color: var(--color-ember-orange);
+  background: color-mix(in srgb, var(--color-ember-orange) 14%, transparent);
+}
+
+/* "Nothing scored well" notice — the list still shows (recall-first), the
+   row just resets expectations before the user walks garbage. */
+.search-weak-note {
+  padding: 8px 12px;
+  font-family: var(--font-body);
+  font-size: var(--text-body-sm);
+  font-style: italic;
+  color: var(--color-steel);
+  border-bottom: 1px solid color-mix(in srgb, var(--color-steel) 18%, transparent);
+}
+
+/* Hybrid refine in flight (the dense leg is running, after a typing pause or
+   Enter): a spinning ring tells the user the search has started and to wait
+   for the re-sort, rather than typing on and queuing another embed. The
+   magnifier also shifts to ember as a second, quieter cue. */
+.search-bar.search-pending .search-icon {
+  color: var(--color-ember-orange);
+}
+.search-spinner {
+  flex: 0 0 auto;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  border: 2px solid color-mix(in srgb, var(--color-ember-orange) 22%, transparent);
+  border-top-color: var(--color-ember-orange);
+  display: none;
+}
+.search-bar.search-pending .search-spinner {
+  display: inline-block;
+  animation: search-spin 0.6s linear infinite;
+}
+@keyframes search-spin { to { transform: rotate(360deg); } }
+
+/* Commit-time match highlight in the panel body (CSS Custom Highlight API —
+   no DOM mutation inside the editor). Same ember wash as result <mark>s so
+   "what you clicked" and "where it is" read as one system. */
+::highlight(kb-search) {
+  background-color: color-mix(in srgb, var(--color-ember-orange) 28%, transparent);
+}
+
+/* Title-field flash for committed title matches: two soft pulses, then gone
+   (the highlight guides, it doesn't nag). */
+#field-title.search-flash {
+  animation: search-title-flash 1.1s ease-in-out 2;
+}
+@keyframes search-title-flash {
+  0%, 100% { background-color: transparent; }
+  50% { background-color: color-mix(in srgb, var(--color-ember-orange) 22%, transparent); }
+}
+
+/* Hotkey hint toast — small floating card. */
+/* Hint toast — spans the canvas band (between sidebar and right edge / panel)
+   and centers the badge inside that band with flex, so the toast tracks the
+   visible canvas as the sidebar collapses or the task panel opens. JS sets
+   `right` to `panel-width` when the panel is open; otherwise it stays 0.
+   For toasts that aren't about graph operations (settings, sharing, account
+   actions), `data-anchor="page"` re-anchors to the full viewport so the
+   badge sits over the page horizontal center, not the canvas band. */
+#hotkey-hint {
+  position: fixed;
+  top: 18px;
+  left: var(--sidebar-w);
+  right: 0;
+  display: flex;
+  justify-content: center;
+  z-index: 30;
+  pointer-events: none;
+  opacity: 1;
+  transition: opacity 0.2s ease;
+}
+#hotkey-hint[data-anchor="page"] {
+  left: 0;
+}
+/* When the read-only banner is showing, push toasts down so the "Save
+   failed" pill doesn't sit behind the orange chip. */
+#readonly-banner:not(.hidden) ~ #hotkey-hint {
+  top: 56px;
+}
+#hotkey-hint.hidden {
+  opacity: 0;
+}
+#hotkey-hint-text {
+  background: var(--color-pure-white);
+  color: var(--color-graphite-nav);
+  border: 1px solid var(--color-mist);
+  padding: 8px 16px;
+  border-radius: var(--radius-buttons);
+  font-family: var(--font-ui);
+  font-size: var(--text-body-sm);
+  font-weight: 500;
+  box-shadow: var(--shadow-sm);
+}
+
+/* Empty state — centered within the canvas area, not the whole viewport */
+#empty-state {
+  position: fixed;
+  top: 0;
+  left: var(--sidebar-w);
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 5;
+}
+#empty-state.hidden { display: none; }
+#empty-state p {
+  font-family: var(--font-display);
+  font-size: var(--text-heading);
+  font-weight: 400;
+  font-style: italic;
+  letter-spacing: -0.02em;
+  color: var(--color-ash);
+}
+
+.hidden { }
+
+/* === Interactive press feedback ===
+   A 0.96 scale on :active gives buttons tactile feedback. 100ms eases
+   on both press and release. Specific properties only (never `all`). */
+.modal-actions button,
+.sb-icon-btn,
+.sb-bottom-btn,
+.sb-menu-btn,
+.tool-btn,
+.share-row button {
+  transition-property: background-color, color, scale, box-shadow, border-color, opacity;
+  transition-duration: 120ms;
+  transition-timing-function: cubic-bezier(0.2, 0, 0, 1);
+}
+.modal-actions button:active,
+.sb-icon-btn:active,
+.sb-bottom-btn:active,
+.sb-menu-btn:active,
+.tool-btn:active,
+.share-row button:active { scale: 0.96; }
+
+/* === Multiplayer presence === */
+.modal-hint {
+  color: var(--color-steel);
+  font-size: var(--text-body-sm);
+  margin: -8px 0 16px 0;
+}
+
+#presence-bar {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  display: flex;
+  flex-direction: row-reverse;
+  align-items: center;
+  gap: 6px;
+  /* Above canvas, sidebar, toolbar (max ~12); below modals (20) so the dark
+     backdrop hides the avatars cleanly when a dialog is open. */
+  z-index: 15;
+  pointer-events: auto;
+}
+#presence-bar.hidden { display: none; }
+
+/* Hide-presence eye toggle. Sits in the very top-right corner of the
+   viewport (above/right of the rightmost avatar). Default invisible;
+   `.is-visible` fades it in on hover over the presence cluster. When
+   `body.presence-hidden`, the eye stays faintly visible so the user
+   can un-hide. */
+.presence-eye {
+  position: fixed;
+  top: 2px;
+  right: 2px;
+  width: 19px;
+  height: 19px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--color-steel);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 16;
+  border-radius: var(--radius-md);
+  transition: opacity 200ms ease, color 200ms ease, background-color 200ms ease;
+}
+.presence-eye .ph {
+  font-size: 14px;
+  line-height: 1;
+}
+/* Icon swap: default state shows open eye; presence-hidden state shows
+   closed eye. Hovering flips to the OPPOSITE icon so the user sees what
+   clicking will do. Specificity: the body.presence-hidden + :hover rules
+   override the simpler ones below. */
+.presence-eye .eye-icon-closed { display: none; }
+.presence-eye:hover .eye-icon-open { display: none; }
+.presence-eye:hover .eye-icon-closed { display: inline; }
+body.presence-hidden .presence-eye .eye-icon-open { display: none; }
+body.presence-hidden .presence-eye .eye-icon-closed { display: inline; }
+body.presence-hidden .presence-eye:hover .eye-icon-open { display: inline; }
+body.presence-hidden .presence-eye:hover .eye-icon-closed { display: none; }
+.presence-eye.is-visible {
+  opacity: 0.8;
+  pointer-events: auto;
+}
+.presence-eye:hover {
+  opacity: 1;
+  color: var(--color-graphite-nav);
+  background: var(--color-blush-tint);
+}
+/* When the cluster is hidden, both presence-bar and push-button go away;
+   the eye stays in place (faded) so the user has a way back. */
+body.presence-hidden #presence-bar,
+body.presence-hidden #btn-follow-toggle {
+  display: none !important;
+}
+body.presence-hidden .presence-eye {
+  opacity: 0.4;
+  pointer-events: auto;
+}
+body.presence-hidden .presence-eye:hover {
+  opacity: 0.9;
+}
+
+.presence-avatar {
+  /* --avatar-glow is set inline per element to the writer's deterministic
+     color. Active avatars use it for a soft halo; idle avatars desaturate. */
+  --avatar-glow: hsl(220, 10%, 60%);
+  position: relative;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-ui);
+  font-size: var(--text-meta);
+  font-weight: 600;
+  color: #fff;
+  letter-spacing: 0.02em;
+  text-shadow: 0 1px 0 rgba(0,0,0,0.18);
+  box-shadow: var(--shadow-sm);
+  cursor: default;
+  user-select: none;
+  transition:
+    transform 140ms cubic-bezier(0.2, 0, 0, 1),
+    box-shadow 220ms cubic-bezier(0.2, 0, 0, 1),
+    filter 220ms cubic-bezier(0.2, 0, 0, 1),
+    opacity 220ms cubic-bezier(0.2, 0, 0, 1);
+}
+.presence-avatar.is-active {
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--avatar-glow) 55%, transparent),
+    0 0 10px 1px color-mix(in srgb, var(--avatar-glow) 65%, transparent),
+    var(--shadow-sm);
+}
+.presence-avatar.is-idle {
+  /* Fully opaque — no opacity here. When stacked, see-through idle avatars
+     would let the avatar beneath bleed through and look messy. Desaturate
+     and dim via filter only. */
+  filter: grayscale(0.9) brightness(0.78);
+}
+.presence-avatar-own { cursor: pointer; }
+.presence-avatar-own:hover { transform: scale(1.06); }
+.presence-avatar-agent { font-size: 16px; line-height: 1; }
+
+/* "+N others" overflow chip — neutral colored so it reads as a counter,
+   not a person. Shares the same circle shape, tooltip behavior, and stack
+   placement as the avatars it summarizes. */
+.presence-avatar-overflow {
+  --avatar-glow: hsl(220, 8%, 55%);
+  background: var(--color-graphite-nav);
+  font-size: var(--text-meta);
+  letter-spacing: 0;
+}
+
+.presence-avatar::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  /* Tooltip is always dark with light text regardless of theme — the design
+     tokens flip across themes and would render text the same color as the
+     surface in one of them. */
+  background: #1f2024;
+  color: #ffffff;
+  font-size: var(--text-meta);
+  font-weight: 500;
+  padding: 4px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(-2px);
+  transition: opacity 120ms, transform 120ms;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+}
+.presence-avatar:hover::after {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Stack mode (5+ writers): all avatars overlap into one deck. JS renders
+   children in REVERSE order so own ends up as the last DOM child, which is
+   both visually rightmost (plain row flex) and naturally painted on top of
+   its overlapping neighbors. Each child after the first slides left by 16px
+   (avatars are 32px) so half of each peeks out — enough to read one initial
+   and tell distinct people apart at a glance. */
+.presence-stack-deck {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+.presence-stack-deck .presence-avatar {
+  margin-left: -16px;
+}
+.presence-stack-deck .presence-avatar:first-child {
+  margin-left: 0;
+}
+/* The avatar next to the overflow chip uses a lighter overlap so the chip's
+   "+N" text stays fully readable; the rest of the stack keeps the tighter
+   -16px overlap. */
+.presence-stack-deck .presence-avatar-overflow + .presence-avatar {
+  margin-left: -11px;
+}
+/* Ripple on hover: the hovered avatar elevates briefly and floats above
+   its neighbors. No fan-out of the rest of the stack. */
+.presence-stack-deck .presence-avatar:hover {
+  transform: translateY(-4px);
+  z-index: 100;
+}
+
+/* ───────── Peer cursor layer (multi-peer presence) ─────────
+   Renders a small glowing dot + name pill anchored at a free corner of
+   the node a peer has selected or is editing. JS picks the slot
+   deterministically with an 8-direction probe (see peerCursorRefresh in
+   public/app.js) so the pill never overlaps any node. pointer-events:
+   none so the layer never intercepts clicks; modals (z-index 20) still
+   cover it as expected. */
+/* Track the cytoscape container exactly: cy.renderedBoundingBox returns
+   coordinates relative to #cy's top-left, but #cy is shifted right by
+   --sidebar-w. If this layer used `inset: 0` (full viewport) the cursors
+   would render at viewport-relative x with a sidebar-width offset error,
+   landing on top of the sidebar instead of on the actual node. */
+#peer-cursor-layer {
+  position: fixed;
+  top: 0;
+  left: var(--sidebar-w);
+  width: calc(100vw - var(--sidebar-w));
+  height: 100vh;
+  pointer-events: none;
+  /* Below the side panel (z-index 10) so a cursor anchored to a node near
+     the right edge of the canvas doesn't poke through an open panel. Still
+     above #cy (default stacking) so cursors render over the graph. */
+  z-index: 9;
+  overflow: hidden;
+}
+.peer-cursor {
+  position: absolute;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transform: translate3d(0, 0, 0);
+  transition: opacity 120ms ease-out;
+}
+.peer-cursor-enter {
+  opacity: 0;
+}
+/* Solid colored dot in the peer color, with a soft pulse ring behind it
+   to signal "live presence". The pulse comes from a ::before pseudo-
+   element that expands and fades — no border, no static halo (those
+   read as visual noise without the motion). The dot itself keeps a tiny
+   drop shadow so it stays legible on white node fills. */
+.peer-cursor-dot {
+  position: relative;
+  display: block;
+  flex-shrink: 0;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--peer-color, #888);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.30);
+}
+/* Soft lamp pulse: gradient glow that breathes in and out, going from
+   nothing → full → nothing each cycle. ease-in-out on a 3-keyframe
+   animation gives each half its own ease, approximating a sine wave so
+   there's no abrupt start or stop. The gradient itself fades from the
+   peer color at the center to transparent at the edge, so the glow
+   reads as a halo around the dot rather than a hard-edged ring. */
+.peer-cursor-dot::before {
+  content: '';
+  position: absolute;
+  /* Pseudo extends slightly past the dot so the gradient has room to
+     fall off into transparency without being clipped at the dot edge. */
+  inset: -4px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    var(--peer-color, #888) 0%,
+    color-mix(in srgb, var(--peer-color, #888) 50%, transparent) 35%,
+    transparent 70%
+  );
+  animation: peer-cursor-pulse 3.1s ease-in-out infinite;
+  pointer-events: none;
+  z-index: -1;
+}
+@keyframes peer-cursor-pulse {
+  0%, 100% { transform: scale(0.85); opacity: 0; }
+  50%      { transform: scale(1.15); opacity: 0.7; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .peer-cursor-dot::before { animation: none; }
+}
+.peer-cursor-pill {
+  padding: 2px 7px;
+  border-radius: 4px;
+  background: var(--peer-color, #888);
+  color: var(--color-pure-white, #fff);
+  font-family: var(--font-sans, system-ui, sans-serif);
+  font-size: 11px;
+  line-height: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
+}
+
+/* 2-4 peers on the same anchor: vertically stacked rows, each peer in
+   their own color. Editing peer placed first (at the top) so it's the row
+   visually closest to the node when the slot is N. */
+.peer-cursor-stack {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+}
+.peer-cursor-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+/* Stack rows reuse the base .peer-cursor-dot rule (including the pulse
+   ::before) — nothing extra needed. The :before animation auto-applies. */
+.peer-cursor-row .peer-cursor-pill {
+  background: var(--peer-color, #888);
+  color: var(--color-pure-white, #fff);
+}
+
+/* Kanban variant: lay stacked-peer chips out HORIZONTALLY instead of
+   vertically. Cards in a column have only ~8px of flex gap above each card,
+   so a tall vertical stack would overlap the previous card's body. A
+   horizontal row of small initial chips stays single-line-height — the
+   marker still sits just above the anchor card, only nicking the previous
+   card's bottom edge by a few pixels. Dots are hidden here because in a
+   horizontal arrangement they multiply visual noise without adding info
+   (the colored pill already encodes which peer). */
+.view-kanban .peer-cursor-stack {
+  flex-direction: row;
+  align-items: center;
+  gap: 3px;
+}
+.view-kanban .peer-cursor-stack .peer-cursor-row {
+  gap: 0;
+}
+.view-kanban .peer-cursor-stack .peer-cursor-dot {
+  display: none;
+}
+
+/* 5+ peers on the same anchor: one larger dot + an "AB & N others" pill.
+   Dot is ~33% larger than the single-peer dot (6px → 8px) so the
+   overflow chip reads as visually weightier. Pulse comes from the base
+   rule and scales with the larger base size automatically. */
+.peer-cursor-overflow .peer-cursor-dot {
+  width: 8px;
+  height: 8px;
+}
+
+/* ───────── Canvas overlay buttons (e.g. follow toggle) ─────────
+   Floating controls anchored over the cytoscape canvas. Sit at z-index 12
+   (above the canvas at 0, below the peer cursor layer at 15, well below
+   modals at 20). The follow toggle is the first user; future floating
+   canvas controls can reuse the class. */
+/* Agent-follow push button — modeled on the reference photo of an
+   industrial light-cream face-plate with a single round raised cream
+   collar/dome housing a small recessed orange cap.
+
+   Three nested layers:
+   - .push-button         plate (warm off-white rectangle, ~uniform fill)
+   - .push-button-collar  raised dome (cream, fills most of the plate)
+   - .push-button-cap     small orange cap (sits in the dome center)
+
+   .is-tracking = cap is flush/recessed in the dome + cream ring pulses
+   faint orange around the cap. Toggle off → cap pops up, halo stops. */
+.push-button {
+  position: fixed;
+  /* Button center aligns with the "Title" label text center. Math:
+     form top y=86, "Title" font 13 × line-height 1.2 → glyph top
+     y≈87.3, glyph bottom y≈100.3, center y≈94. With a 40px button,
+     top: 74 puts the button center at y=94. The whole group (button +
+     status label) moves up with this, narrowing the gap to the avatar
+     bar above. */
+  top: 74px;
+  right: 12px;
+  z-index: 12;
+  /* Hit area only — the visible dome is .push-button-collar. No plate,
+     no border, no background; the round dome sits directly on the
+     canvas surface. Width/height give a slightly generous click target
+     around the 30px dome. */
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.push-button.hidden { display: none; }
+
+/* Hover tooltip — mirrors .presence-avatar::after so the visual style
+   matches the avatar-bar tooltips. Native `title` was replaced with
+   `data-tooltip` because the browser tooltip has a ~750ms delay that
+   can't be configured; this CSS-only tooltip appears in 120ms.
+   Right-anchored to the button's right edge so it can never extend
+   past the canvas edge — the button sits near the right side of the
+   screen (under the own avatar), so a centered tooltip would clip. */
+.push-button::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  background: #1f2024;
+  color: #ffffff;
+  font-size: var(--text-meta);
+  font-weight: 500;
+  padding: 4px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(-2px);
+  transition: opacity 120ms, transform 120ms;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+}
+.push-button:hover::after {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Status label above the button. Tracking → ember-orange "Tracking";
+   not tracking → muted gray "Not tracking". Sits at the MY GRAPHS /
+   Title section-label y so the row of section labels stays aligned.
+   Same uppercase letter-spaced styling as the MY GRAPHS label, at
+   roughly half the font size. */
+.push-button-status {
+  position: absolute;
+  /* Aligns the BOTTOM of the status text with the bottom of the "Title"
+     label text in the right panel. "Title" text bottom y≈100 (form top
+     86 + 13px glyph + 1px line-leading). Button top y=104, so status
+     line-box bottom needs to land at y≈101 → calc(100% + 3px). */
+  bottom: calc(100% + 3px);
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--font-label);
+  font-size: 7px;
+  /* Tight line-height so the line-box bottom equals the glyph bottom —
+     keeps the alignment math predictable across fonts. */
+  line-height: 1;
+  font-weight: 600;
+  letter-spacing: 0.125em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--color-ember-orange);
+  pointer-events: none;
+  transition: color 180ms ease-out;
+}
+.push-button:not(.is-tracking) .push-button-status {
+  color: #a09c95;
+}
+
+/* Cream raised dome — the dominant feature. Horizontally-centered
+   radial highlight (slightly top-lit) + symmetric vertical drop shadow,
+   so the dome's visual center matches its geometric center. Otherwise
+   an asymmetric shadow pulls the perceived centroid down-right and the
+   cap (which is geometric-centered) reads as off-center. */
+.push-button-collar {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 30%,
+    #f4eee2 0%,
+    #e7dec9 65%,
+    #d7cdb6 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.85),
+    inset 0 -1px 1px rgba(0, 0, 0, 0.06),
+    0 2px 4px rgba(0, 0, 0, 0.14);
+  /* Clip the radar-ping pulse so it can't extend past the dome edge. */
+  overflow: hidden;
+}
+
+/* Radar-ping pulse, "filled band" style: the ::before is a solid
+   orange disc that scales up from cap-edge size to dome-edge size.
+   The cap (centered, opaque) paints over the disc's center, so the
+   only visible portion is the ring between cap edge and the disc's
+   current outer edge — as the disc grows, that visible band widens,
+   reading as orange "filling in" the beige from cap outward.
+
+   Geometry: cap is 13px (radius 6.5), bezel adds 1.5px → cap+bezel
+   edge at radius 8. Dome is 30px (radius 15). ::before is inset:0
+   (matches dome). At scale 0.53 the disc is 16x16 (radius 8) —
+   exactly the cap+bezel footprint, fully hidden behind the cap.
+   At scale 1.0 the disc fills the dome (radius 15). overflow:hidden
+   on the collar clips anything past the dome edge. */
+.push-button-collar::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: var(--color-ember-orange);
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(0.53);
+}
+.push-button.is-tracking .push-button-collar::before {
+  animation: push-button-pulse 2s ease-out infinite;
+}
+
+/* Orange cap — flat solid disc in the app's ember-orange (same token
+   as NEW GRAPH / MY GRAPHS labels). No spherical gradient; the cap
+   reads as a coin-flat disc. A thin lighter-cream ring around it via
+   box-shadow acts as the cap's "container" — the bezel lip where the
+   cap sits in the dome. */
+.push-button-cap {
+  display: block;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: var(--color-ember-orange);
+  /* Default = tracking on. Thin cream bezel ring + a subtle top inset
+     shadow so the cap reads as set into the bezel, not floating on it.
+     No black border. */
+  box-shadow:
+    0 0 0 1.5px #f5ecda,
+    inset 0 1px 1px rgba(0, 0, 0, 0.18);
+  transition:
+    transform 180ms cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 180ms cubic-bezier(0.4, 0, 0.2, 1),
+    background-color 180ms ease-out;
+}
+
+/* Tracking OFF — cap stays geometrically centered in the dome (no
+   vertical offset; an offset would make the beige look thicker on one
+   side). Inactivity reads from the muted gray color + drop shadow.
+   The cream bezel ring stays. */
+.push-button:not(.is-tracking) .push-button-cap {
+  background: #a09c95;
+  box-shadow:
+    0 0 0 1.5px #f5ecda,
+    0 1px 2px rgba(0, 0, 0, 0.20),
+    inset 0 -1px 1px rgba(0, 0, 0, 0.10);
+}
+
+/* Held-down feedback — extra-pressed inset while the mouse is down. */
+.push-button:active .push-button-cap {
+  transform: translateY(1px);
+  box-shadow:
+    0 0 0 1.5px #f5ecda,
+    inset 0 2px 3px rgba(0, 0, 0, 0.30);
+  transition-duration: 80ms;
+}
+
+@keyframes push-button-pulse {
+  /* Start: solid orange disc sized to the cap+bezel footprint
+     (scale 0.53 → radius 8), fully hidden behind the cap. Quick fade
+     to peak opacity as the disc grows past the cap, then a long ease-
+     out as it fills outward to the dome edge (scale 1.0 → radius 15)
+     while fading back to 0. The visible band — orange "filling in"
+     the beige — widens from 0 to 7px over the cycle. */
+  0%   { transform: scale(0.53); opacity: 0; }
+  15%  { opacity: 0.50; }
+  100% { transform: scale(1.0); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .push-button-collar::before { animation: none; }
+  .push-button.is-tracking .push-button-collar::before { opacity: 0.30; }
+}
