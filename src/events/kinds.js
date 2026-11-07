@@ -55,7 +55,7 @@ export const EVENT_KINDS = Object.freeze([
 // 2026-11-06 (one data model, er289bkv2zkcs5w6 #11334 D5). The coordination
 // engine's own events — "lease taken", "push seen", "landed", "finding filed"
 // — live in this log as the `coord.*` FAMILY: `'coord.' + the engine's event
-// type` (`coord.claim.landed`, `coord.finding.filed`, …). The CHECK admits the
+// type` (`coord.proposition.landed`, `coord.finding.filed`, …). The CHECK admits the
 // family by prefix (`kind LIKE 'coord.%'`) because the vocabulary is defined by
 // the engine's code and grows with it, so EVENT_KINDS above stays the list of
 // this record's OWN kinds and the family is recognised by this predicate. A

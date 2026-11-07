@@ -821,7 +821,7 @@ ALTER TABLE events ADD COLUMN IF NOT EXISTS payload_salt TEXT;
 -- E18.6 added 'node.excised' the same way.
 -- 2026-11-06 (one data model, Multitap er289bkv2zkcs5w6 #11334 D5): the
 -- coordination engine's own events join this log as the `coord.*` FAMILY —
--- `coord.claim.landed`, `coord.finding.filed`, … — admitted by prefix rather
+-- `coord.proposition.landed`, `coord.finding.filed`, … — admitted by prefix rather
 -- than one literal each, because the engine's event vocabulary is defined in
 -- its own code (Go `EventType` constants) and grows with it; listing every
 -- member here would make each new engine event a schema change in two repos.
@@ -1509,13 +1509,13 @@ CREATE TRIGGER gt_log_graph_delete BEFORE DELETE ON graphs
 
 -- ---- coordination events (one data model, 2026-11-06) -----------------------
 -- The coordination engine (Multitap's Go server; Superpose's core ported by its
--- tests) keeps its records — claims, lines, its findings, assumptions and
+-- tests) keeps its records — propositions, lines, its findings, assumptions and
 -- decisions — as nodes of this record, each with the engine's whole document
 -- under meta.coord (er289bkv2zkcs5w6 #11334, D1–D6). Its own log — "lease
 -- taken", "push seen", "landed", "finding filed" — joins THIS log through the
 -- one function below, so a graph has one history with one sequence.
 --
---   kind         'coord.' || the engine's event type ('claim.landed', …)
+--   kind         'coord.' || the engine's event type ('proposition.landed', …)
 --   subject      the node that holds the engine record the event is mostly
 --                about ('node', its tasks.id), or NULL when the event concerns
 --                no single node (a line, the served reality)
@@ -1531,6 +1531,14 @@ CREATE TRIGGER gt_log_graph_delete BEFORE DELETE ON graphs
 --   actor        gt_actor(), from the same session context the routes set, so
 --                the engine's writes are attributed like any agent's
 --   cause_id     NULL: the engine's causality is in `claims` and `data`
+--
+-- `claims` — the parameter and the payload key — holds the engine's PROPOSITION
+-- ids (the unit of work was renamed on 2026-11-07, Multitap #11338). The name
+-- stays for now: CREATE OR REPLACE cannot rename a parameter of a function that
+-- exists ("cannot change name of input parameter"), and the Node app at 93ce2f8,
+-- still running as the rollback, re-applies THIS function with this name and
+-- this key at every boot; the two servers share the database. Rename both when
+-- that app is retired (one line here, one in the Go store's reader).
 --
 -- Returns the record's seq. Append-only like every event (gt_events_append_only).
 CREATE OR REPLACE FUNCTION gt_log_coord(

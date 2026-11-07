@@ -7,15 +7,15 @@ import { summarize, documentText, kindWords, COORD_NOTE } from '../public/coord-
 const T0 = Date.UTC(2026, 10, 6, 12, 0, 0);
 
 describe('summarize', () => {
-  it('a held claim: what it is, who holds it and until when, scope, pushes, landing', () => {
+  it('a held proposition: what it is, who holds it and until when, scope, pushes, landing', () => {
     const rows = summarize({
-      id: 'c1', kind: 'claim', statement: 'uses dates', status: 'claimed',
+      id: 'c1', kind: 'proposition', statement: 'uses dates', status: 'claimed',
       scope: ['src/d/**'], line: 'main', repo: 'shop',
       lease: { holder: 'agent-7', expiresAt: T0 + 60_000 },
       pushes: ['0123456789abcdef0123'], landing: { status: 'queued' }, contradicted: ['f2'],
     }, T0);
     const m = Object.fromEntries(rows.map((r) => [r.label, r.value]));
-    expect(m['What it is']).toMatch(/^Claim — /);
+    expect(m['What it is']).toMatch(/^Proposition — /);
     expect(m['Engine id']).toBe('c1');
     expect(m["Engine's status"]).toBe('claimed');
     expect(m['Held by']).toBe('agent-7 — until 2026-11-06 12:01:00Z');
@@ -26,10 +26,10 @@ describe('summarize', () => {
     expect(rows.map((r) => r.label)[0]).toBe('What it is');
   });
 
-  it('a lease that has run out says so; an open claim is held by nobody', () => {
-    const held = summarize({ kind: 'claim', id: 'c1', lease: { holder: 'a', expiresAt: T0 - 1 } }, T0);
+  it('a lease that has run out says so; an open proposition is held by nobody', () => {
+    const held = summarize({ kind: 'proposition', id: 'c1', lease: { holder: 'a', expiresAt: T0 - 1 } }, T0);
     expect(held.find((r) => r.label === 'Held by').value).toMatch(/\(run out\)$/);
-    const open = summarize({ kind: 'claim', id: 'c2', status: 'open' }, T0);
+    const open = summarize({ kind: 'proposition', id: 'c2', status: 'open' }, T0);
     expect(open.find((r) => r.label === 'Held by').value).toBe('nobody');
   });
 
@@ -41,7 +41,7 @@ describe('summarize', () => {
     const d = Object.fromEntries(summarize({ kind: 'decision', id: 'd1', deadline: T0, defaultAction: 'park-investigation', status: 'todo' }, T0).map((r) => [r.label, r.value]));
     expect(d['Deadline']).toBe('2026-11-06 12:00:00Z');
     expect(d['If nobody answers']).toBe('park-investigation');
-    const l = Object.fromEntries(summarize({ name: 'main', head: 'abcdef1234567890', served: true, landing: { claim: 'c1' } }, T0).map((r) => [r.label, r.value]));
+    const l = Object.fromEntries(summarize({ name: 'main', head: 'abcdef1234567890', served: true, landing: { proposition: 'c1' } }, T0).map((r) => [r.label, r.value]));
     expect(l['What it is']).toMatch(/^Line — /);
     expect(l['Head']).toBe('abcdef123456');
     expect(l['Served']).toBe('yes');
@@ -68,7 +68,7 @@ describe('documentText', () => {
 
 describe('words', () => {
   it('every kind has plain words and the note names the way to steer', () => {
-    for (const k of ['claim', 'finding', 'assumption', 'decision', 'line']) expect(kindWords(k)).toMatch(/ — /);
+    for (const k of ['proposition', 'finding', 'assumption', 'decision', 'line']) expect(kindWords(k)).toMatch(/ — /);
     expect(kindWords('other')).toBe('other');
     expect(COORD_NOTE).toMatch(/finding/);
     expect(COORD_NOTE).toMatch(/decision/);

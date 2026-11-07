@@ -74,27 +74,27 @@ async function mkEdge(source, target, purpose) {
 const ids = (rows) => rows.map((r) => Number(r.id)).sort((a, b) => a - b);
 
 // A small mixed graph: two ordinary nodes (one a person's `decision`), one
-// ordinary `finding`, and three coordination nodes (a claim, the engine's own
+// ordinary `finding`, and three coordination nodes (a proposition, the engine's own
 // finding, a line) — so a type-based filter would wrongly lump the person's
 // decision with the engine's, and the document marker tells them apart.
 async function seed() {
   const task = await mkNode('Write the plan', { type: 'task' });
   const decision = await mkNode('Choose the stack', { type: 'decision' });
   const finding = await mkNode('Latency is fine', { type: 'finding' });
-  const claim = await mkCoordNode('Port the parser', 'claim', { id: 'c1', status: 'claimed' });
+  const proposition = await mkCoordNode('Port the parser', 'proposition', { id: 'c1', status: 'claimed' });
   const efinding = await mkCoordNode('Check fails on main', 'finding', { id: 'f1' });
   const line = await mkCoordNode('main', 'line', { id: 'main' });
   await mkEdge(task, decision, 'required for');
-  await mkEdge(claim, task, 'related to');
-  await mkEdge(efinding, claim, 'contradicts');
-  return { task, decision, finding, claim, efinding, line };
+  await mkEdge(proposition, task, 'related to');
+  await mkEdge(efinding, proposition, 'contradicts');
+  return { task, decision, finding, proposition, efinding, line };
 }
 
 describe('nodeFilter — the pure part', () => {
   it('parses nothing into an empty filter that keeps every node', () => {
     const f = parseNodeFilter({}).value;
     expect(f.isEmpty).toBe(true);
-    expect(nodePassesFilter({ meta: { type: 'claim', coord: {} } }, f)).toBe(true);
+    expect(nodePassesFilter({ meta: { type: 'proposition', coord: {} } }, f)).toBe(true);
     expect(nodePassesFilter({ meta: {} }, f)).toBe(true);
   });
 
@@ -128,7 +128,7 @@ describe('nodeFilter — the pure part', () => {
 
   it('filterGraphPayload keeps a link only when both ends survive', () => {
     const payload = {
-      nodes: [{ id: 1, meta: { type: 'task' } }, { id: 2, meta: { type: 'claim', coord: {} } }, { id: 3, meta: {} }],
+      nodes: [{ id: 1, meta: { type: 'task' } }, { id: 2, meta: { type: 'proposition', coord: {} } }, { id: 3, meta: {} }],
       links: [{ source: 1, target: 2 }, { source: 1, target: 3 }],
       as_of: { seq: 9 },
     };
@@ -153,13 +153,13 @@ describe('R1 — the read routes', () => {
     expect(ids(twoTypes.body)).toEqual(ids([{ id: s.task }, { id: s.line }]));
 
     const noTasks = await request(app).get(`/api/graphs/${gid}/tasks?exclude_types=task`);
-    expect(ids(noTasks.body)).toEqual(ids([s.decision, s.finding, s.claim, s.efinding, s.line].map((id) => ({ id }))));
+    expect(ids(noTasks.body)).toEqual(ids([s.decision, s.finding, s.proposition, s.efinding, s.line].map((id) => ({ id }))));
 
     const noCoord = await request(app).get(`/api/graphs/${gid}/tasks?coord=exclude`);
     expect(ids(noCoord.body)).toEqual(ids([s.task, s.decision, s.finding].map((id) => ({ id }))));
 
     const onlyCoord = await request(app).get(`/api/graphs/${gid}/tasks?coord=only`);
-    expect(ids(onlyCoord.body)).toEqual(ids([s.claim, s.efinding, s.line].map((id) => ({ id }))));
+    expect(ids(onlyCoord.body)).toEqual(ids([s.proposition, s.efinding, s.line].map((id) => ({ id }))));
 
     // The two findings share a type; only the document tells them apart.
     const findings = await request(app).get(`/api/graphs/${gid}/tasks?types=finding&coord=exclude`);
@@ -189,12 +189,12 @@ describe('R1 — the read routes', () => {
     const res = await request(app).get(`/api/graphs/${gid}/graph?coord=exclude`);
     expect(res.status).toBe(200);
     expect(ids(res.body.nodes)).toEqual(ids([s.task, s.decision, s.finding].map((id) => ({ id }))));
-    // claim→task and efinding→claim touch a hidden node and go with it.
+    // proposition→task and efinding→proposition touch a hidden node and go with it.
     expect(res.body.links.map((l) => [l.source, l.target])).toEqual([[s.task, s.decision]]);
 
     const only = await request(app).get(`/api/graphs/${gid}/graph?coord=only`);
-    expect(ids(only.body.nodes)).toEqual(ids([s.claim, s.efinding, s.line].map((id) => ({ id }))));
-    expect(only.body.links.map((l) => [l.source, l.target])).toEqual([[s.efinding, s.claim]]);
+    expect(ids(only.body.nodes)).toEqual(ids([s.proposition, s.efinding, s.line].map((id) => ({ id }))));
+    expect(only.body.links.map((l) => [l.source, l.target])).toEqual([[s.efinding, s.proposition]]);
 
     const bad = await request(app).get(`/api/graphs/${gid}/graph?types=${'x'.repeat(70)}`);
     expect(bad.status).toBe(400);
@@ -213,22 +213,22 @@ describe('R1 — the read routes', () => {
   });
 
   it('GET /tasks/ready: filters result rows only — a filtered prerequisite still blocks', async () => {
-    // claim (todo, coordination) is required for task (todo). With coord=exclude the
-    // claim leaves the ANSWER but keeps BLOCKING: task must not become ready.
-    const claim = await mkCoordNode('Port the parser', 'claim', { id: 'c1' });
+    // proposition (todo, coordination) is required for task (todo). With coord=exclude the
+    // proposition leaves the ANSWER but keeps BLOCKING: task must not become ready.
+    const proposition = await mkCoordNode('Port the parser', 'proposition', { id: 'c1' });
     const task = await mkNode('Ship it', { type: 'task' });
     const free = await mkNode('Write docs', { type: 'task' });
-    await mkEdge(claim, task, 'required for');
+    await mkEdge(proposition, task, 'required for');
 
     const all = await request(app).get(`/api/graphs/${gid}/tasks/ready`);
-    expect(ids(all.body)).toEqual(ids([claim, free].map((id) => ({ id }))));
+    expect(ids(all.body)).toEqual(ids([proposition, free].map((id) => ({ id }))));
 
     const res = await request(app).get(`/api/graphs/${gid}/tasks/ready?coord=exclude`);
     expect(res.status).toBe(200);
     expect(ids(res.body)).toEqual([free]);
 
-    const byType = await request(app).get(`/api/graphs/${gid}/tasks/ready?types=claim`);
-    expect(ids(byType.body)).toEqual([claim]);
+    const byType = await request(app).get(`/api/graphs/${gid}/tasks/ready?types=proposition`);
+    expect(ids(byType.body)).toEqual([proposition]);
   });
 
   it('POST /structure: the shape of the part that passes the filter', async () => {
@@ -236,13 +236,13 @@ describe('R1 — the read routes', () => {
     const all = await request(app).post(`/api/graphs/${gid}/structure`).send({});
     expect(all.status).toBe(200);
     const allIds = new Set(JSON.stringify(all.body).match(/\d+/g).map(Number));
-    expect(allIds.has(s.claim)).toBe(true);
+    expect(allIds.has(s.proposition)).toBe(true);
 
     const res = await request(app).post(`/api/graphs/${gid}/structure`).send({ coord: 'exclude' });
     expect(res.status).toBe(200);
     const text = JSON.stringify(res.body);
     // No region, rollup or node list names a coordination node.
-    for (const hidden of [s.claim, s.efinding, s.line]) {
+    for (const hidden of [s.proposition, s.efinding, s.line]) {
       expect(text.includes(`"${hidden}"`) || text.includes(`:${hidden},`) || text.includes(`[${hidden},`) || text.includes(`,${hidden}]`) || text.includes(`[${hidden}]`)).toBe(false);
     }
     expect(text.includes(String(s.task))).toBe(true);
@@ -255,32 +255,32 @@ describe('R1 — the read routes', () => {
 
 describe('D5 — the coord.* event family', () => {
   it('isCoordKind recognises the family and nothing else', () => {
-    expect(isCoordKind('coord.claim.landed')).toBe(true);
+    expect(isCoordKind('coord.proposition.landed')).toBe(true);
     expect(isCoordKind('coord.')).toBe(false);
     expect(isCoordKind('claim.verified')).toBe(false);
     expect(isCoordKind(null)).toBe(false);
   });
 
-  it('gt_log_coord appends an annotation with the record seq, the engine seq and the claims', async () => {
-    const claim = await mkCoordNode('Port the parser', 'claim', { id: 'c1' });
+  it('gt_log_coord appends an annotation with the record seq, the engine seq and the propositions (payload key `claims`, kept while the Node app shares the database)', async () => {
+    const proposition = await mkCoordNode('Port the parser', 'proposition', { id: 'c1' });
     const before = await pool.query('SELECT MAX(seq) AS s FROM events WHERE graph_id = $1', [gid]);
     const r = await pool.query(
-      `SELECT gt_log_coord($1, 'claim.landed', $2, 7, 1700000000000, '["c1"]'::jsonb, '{"sha":"abc"}'::jsonb) AS seq`,
-      [gid, claim],
+      `SELECT gt_log_coord($1, 'proposition.landed', $2, 7, 1700000000000, '["c1"]'::jsonb, '{"sha":"abc"}'::jsonb) AS seq`,
+      [gid, proposition],
     );
     const seq = Number(r.rows[0].seq);
     expect(seq).toBe(Number(before.rows[0].s) + 1);
     const row = (await pool.query('SELECT * FROM events WHERE graph_id = $1 AND seq = $2', [gid, seq])).rows[0];
-    expect(row.kind).toBe('coord.claim.landed');
+    expect(row.kind).toBe('coord.proposition.landed');
     expect(row.subject_kind).toBe('node');
-    expect(Number(row.subject_id)).toBe(claim);
+    expect(Number(row.subject_id)).toBe(proposition);
     expect(row.cause_id).toBeNull();
     expect(row.payload).toMatchObject({
-      v: 1, op: 'ANNOTATE', kinds: ['coord.claim.landed'], coord_seq: 7, at: 1700000000000, claims: ['c1'], data: { sha: 'abc' },
+      v: 1, op: 'ANNOTATE', kinds: ['coord.proposition.landed'], coord_seq: 7, at: 1700000000000, claims: ['c1'], data: { sha: 'abc' },
     });
     expect(typeof row.payload_hash).toBe('string'); // stamped like every event
 
-    // A line event with no single node: subject NULL, defaults for claims/data.
+    // A line event with no single node: subject NULL, defaults for propositions/data.
     const r2 = await pool.query(`SELECT gt_log_coord($1, 'reality.served', NULL, 8, 0, NULL, NULL) AS seq`, [gid]);
     const row2 = (await pool.query('SELECT * FROM events WHERE graph_id = $1 AND seq = $2', [gid, Number(r2.rows[0].seq)])).rows[0];
     expect(row2.subject_kind).toBeNull();
@@ -295,18 +295,18 @@ describe('D5 — the coord.* event family', () => {
        VALUES ($1, gt_next_seq($1), now(), now(), '{}'::jsonb, 'bogus.kind', 0, '{}'::jsonb)`,
       [gid],
     )).rejects.toThrow(/events_kind_valid/);
-    await expect(pool.query(`SELECT gt_log_coord($1, 'coord.claim.landed', NULL, 1, 0, NULL, NULL)`, [gid]))
+    await expect(pool.query(`SELECT gt_log_coord($1, 'coord.proposition.landed', NULL, 1, 0, NULL, NULL)`, [gid]))
       .rejects.toThrow(/bare event type/);
     await expect(pool.query(`SELECT gt_log_coord($1, '', NULL, 1, 0, NULL, NULL)`, [gid]))
       .rejects.toThrow(/bare event type/);
   });
 
   it('the fold treats a coord event as an annotation: same state, no anomaly', async () => {
-    const claim = await mkCoordNode('Port the parser', 'claim', { id: 'c1' });
+    const proposition = await mkCoordNode('Port the parser', 'proposition', { id: 'c1' });
     const task = await mkNode('Ship it', { type: 'task' });
-    await mkEdge(claim, task, 'required for');
+    await mkEdge(proposition, task, 'required for');
     const beforeRows = (await pool.query('SELECT * FROM events WHERE graph_id = $1 ORDER BY seq', [gid])).rows;
-    await pool.query(`SELECT gt_log_coord($1, 'claim.landed', $2, 1, 0, '["c1"]'::jsonb, '{}'::jsonb)`, [gid, claim]);
+    await pool.query(`SELECT gt_log_coord($1, 'proposition.landed', $2, 1, 0, '["c1"]'::jsonb, '{}'::jsonb)`, [gid, proposition]);
     await pool.query(`SELECT gt_log_coord($1, 'reality.served', NULL, 2, 0, NULL, NULL)`, [gid]);
     const afterRows = (await pool.query('SELECT * FROM events WHERE graph_id = $1 ORDER BY seq', [gid])).rows;
     expect(afterRows).toHaveLength(beforeRows.length + 2);
@@ -318,18 +318,18 @@ describe('D5 — the coord.* event family', () => {
   });
 
   it('GET /events lists coord events and accepts ?kind=coord.… ; the kind filter still rejects junk', async () => {
-    const claim = await mkCoordNode('Port the parser', 'claim', { id: 'c1' });
-    await pool.query(`SELECT gt_log_coord($1, 'claim.landed', $2, 1, 0, '["c1"]'::jsonb, '{}'::jsonb)`, [gid, claim]);
+    const proposition = await mkCoordNode('Port the parser', 'proposition', { id: 'c1' });
+    await pool.query(`SELECT gt_log_coord($1, 'proposition.landed', $2, 1, 0, '["c1"]'::jsonb, '{}'::jsonb)`, [gid, proposition]);
     const all = await request(app).get(`/api/graphs/${gid}/events?format=json`);
     expect(all.status).toBe(200);
     const list = Array.isArray(all.body) ? all.body : all.body.events;
-    expect(list.some((e) => e.kind === 'coord.claim.landed')).toBe(true);
+    expect(list.some((e) => e.kind === 'coord.proposition.landed')).toBe(true);
 
-    const only = await request(app).get(`/api/graphs/${gid}/events?format=json&kind=coord.claim.landed`);
+    const only = await request(app).get(`/api/graphs/${gid}/events?format=json&kind=coord.proposition.landed`);
     expect(only.status).toBe(200);
     const onlyList = Array.isArray(only.body) ? only.body : only.body.events;
     expect(onlyList.length).toBe(1);
-    expect(onlyList[0].kind).toBe('coord.claim.landed');
+    expect(onlyList[0].kind).toBe('coord.proposition.landed');
 
     const bad = await request(app).get(`/api/graphs/${gid}/events?format=json&kind=nonsense.kind`);
     expect(bad.status).toBe(400);
@@ -343,7 +343,7 @@ describe('D4 — the owner rule: steer through recorded actions, not silent edit
   // The engine's document, as the store writes it: content and meta together,
   // the whole document under meta.coord.
   async function coordRow(doc = { id: 'c1', status: 'claimed' }) {
-    return mkCoordNode('Port the parser', 'claim', { statement: 'Port the parser', lease: { holder: 'agent-7' }, ...doc });
+    return mkCoordNode('Port the parser', 'proposition', { statement: 'Port the parser', lease: { holder: 'agent-7' }, ...doc });
   }
 
   it('PATCH may move or recolour a coordination node, but not change its statement or its document', async () => {
@@ -402,18 +402,18 @@ describe('D4 — the owner rule: steer through recorded actions, not silent edit
   });
 
   it('DELETE refuses a coordination node and allows an ordinary one', async () => {
-    const claim = await coordRow();
+    const proposition = await coordRow();
     const plain = await mkNode('Write the plan', { type: 'task' });
-    const r1 = await request(app).delete(`/api/graphs/${gid}/tasks/${claim}`);
+    const r1 = await request(app).delete(`/api/graphs/${gid}/tasks/${proposition}`);
     expect(r1.status).toBe(409);
     expect(r1.body.error).toBe('coordination_node');
     const r2 = await request(app).delete(`/api/graphs/${gid}/tasks/${plain}`);
     expect(r2.status).toBe(200);
     const left = await pool.query('SELECT id FROM tasks WHERE graph_id = $1', [gid]);
-    expect(ids(left.rows)).toEqual([claim]);
+    expect(ids(left.rows)).toEqual([proposition]);
   });
 
-  it('a batch upsert by external_id cannot overwrite a claim, but may lay it out', async () => {
+  it('a batch upsert by external_id cannot overwrite a proposition, but may lay it out', async () => {
     const id = await coordRow();
     await pool.query(`UPDATE tasks SET external_id = 'c1' WHERE id = $1`, [id]);
     const cur = (await pool.query('SELECT * FROM tasks WHERE id = $1', [id])).rows[0];
@@ -432,9 +432,9 @@ describe('D4 — the owner rule: steer through recorded actions, not silent edit
     expect(after.title).toBe('Port the parser');
   });
 
-  it("the engine's edges (meta.coord) cannot be re-purposed or deleted through the routes; a person's edge between claims can", async () => {
+  it("the engine's edges (meta.coord) cannot be re-purposed or deleted through the routes; a person's edge between propositions can", async () => {
     const a = await coordRow({ id: 'c1' });
-    const b = await mkCoordNode('Port the lexer', 'claim', { id: 'c2' });
+    const b = await mkCoordNode('Port the lexer', 'proposition', { id: 'c2' });
     // An engine edge, as the store writes it.
     const ins = await pool.query(
       `INSERT INTO edges (graph_id, source_id, target_id, type, purpose, meta)

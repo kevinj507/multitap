@@ -2,8 +2,8 @@
 // the pure half of S2b of the one-data-model design (Multitap
 // er289bkv2zkcs5w6 #11334). The engine's routes that steer work are the
 // owner's: answer a decision, verify or refute a finding, recheck, reopen or
-// land a claim. (Filing a finding is a claim holder's act — it needs a lease —
-// and there is no amendment of a claim's statement; see the design node.) The
+// land a proposition. (Filing a finding is a proposition holder's act — it needs a lease —
+// and there is no amendment of a proposition's statement; see the design node.) The
 // canvas calls these routes with its own session, which the engine accepts
 // since S3; the server answers 401/403 when the person may not.
 //
@@ -19,35 +19,35 @@ export function actionsFor(coord) {
   const kind = typeof coord.kind === 'string' ? coord.kind : '';
   const id = typeof coord.id === 'string' ? coord.id : '';
   const out = [];
-  if (kind === 'claim' && id) {
+  if (kind === 'proposition' && id) {
     const st = coord.status;
     if (st === 'done') {
-      out.push({ id: 'land', label: 'Land it', method: 'POST', path: `/claims/${id}/land`, hint: 'merge the finished claim into its line, through the checks' });
+      out.push({ id: 'land', label: 'Land it', method: 'POST', path: `/propositions/${id}/land`, hint: 'merge the finished proposition into its line, through the checks' });
     }
-    // Reopen is for a finished claim whose landing was given up on (platform
+    // Reopen is for a finished proposition whose landing was given up on (platform
     // errors) or that waits on a broken line — the engine refuses it otherwise.
     const landing = coord.landing && typeof coord.landing === 'object' ? coord.landing.status : null;
     if (st === 'done' && (landing === 'failed' || landing === 'error' || landing === 'blocked' || landing === 'conflict')) {
-      out.push({ id: 'reopen', label: 'Send it back', method: 'POST', path: `/claims/${id}/reopen`, hint: 'back to the ready set, for an agent to take up again' });
+      out.push({ id: 'reopen', label: 'Send it back', method: 'POST', path: `/propositions/${id}/reopen`, hint: 'back to the ready set, for an agent to take up again' });
     }
     if (st === 'claimed' || st === 'done' || st === 'landed') {
-      out.push({ id: 'recheck', label: 'Run the checks again', method: 'POST', path: `/claims/${id}/recheck`, hint: 'the gate checks the claim\'s latest push once more' });
+      out.push({ id: 'recheck', label: 'Run the checks again', method: 'POST', path: `/propositions/${id}/recheck`, hint: 'the gate checks the proposition\'s latest push once more' });
     }
     // The owner's two direct moves (D12). "Say it is wrong" files a finding on
     // the person's authority — verified at once — against an assumption the
-    // claim rests on, located in this claim; it needs that assumption's id,
-    // which the panel asks for when the claim rests on more than one.
-    // "Amend" changes the claim's words; a held claim turns stale and its
+    // proposition rests on, located in this proposition; it needs that assumption's id,
+    // which the panel asks for when the proposition rests on more than one.
+    // "Amend" changes the proposition's words; a held proposition turns stale and its
     // holder re-plans against them.
     if (st === 'open' || st === 'claimed' || st === 'stale') {
-      out.push({ id: 'amend', label: 'Amend', method: 'POST', path: `/claims/${id}/amend`, ask: 'statement', hint: 'change what the claim says; the holder re-plans against it' });
-      out.push({ id: 'finding', label: 'Say it is wrong', method: 'POST', path: '/findings/owner', ask: 'finding', body: { effect: 'contradicts', where: [id] }, hint: 'a finding on your authority: an assumption this claim rests on fails here; a held claim turns stale for its holder to re-plan, an open one carries the finding for whoever takes it up' });
+      out.push({ id: 'amend', label: 'Amend', method: 'POST', path: `/propositions/${id}/amend`, ask: 'statement', hint: 'change what the proposition says; the holder re-plans against it' });
+      out.push({ id: 'finding', label: 'Say it is wrong', method: 'POST', path: '/findings/owner', ask: 'finding', body: { effect: 'contradicts', where: [id] }, hint: 'a finding on your authority: an assumption this proposition rests on fails here; a held proposition turns stale for its holder to re-plan, an open one carries the finding for whoever takes it up' });
     }
   }
   if (kind === 'finding' && id) {
     const st = coord.status;
     if (st === 'unverified') {
-      out.push({ id: 'verify', label: 'Confirm it', method: 'POST', path: `/findings/${id}/verify`, hint: 'the finding holds; claims it contradicts turn stale' });
+      out.push({ id: 'verify', label: 'Confirm it', method: 'POST', path: `/findings/${id}/verify`, hint: 'the finding holds; propositions it contradicts turn stale' });
       out.push({ id: 'refute', label: 'Refute it', method: 'POST', path: `/findings/${id}/refute`, hint: 'the finding is wrong; nothing it touched changes' });
     }
   }
@@ -60,7 +60,7 @@ export function actionsFor(coord) {
         path: `/decisions/${id}/answer`,
         body: { answer: a },
         ask: 'reason',
-        hint: a === 'continue-investigation' ? 'keep investigating; the claims it holds up go on' : 'park the investigation; the default action stands',
+        hint: a === 'continue-investigation' ? 'keep investigating; the propositions it holds up go on' : 'park the investigation; the default action stands',
       });
     }
   }

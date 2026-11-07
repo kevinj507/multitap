@@ -7,18 +7,18 @@ import { actionsFor, errorWords } from '../public/coord-actions.js';
 const ids = (coord) => actionsFor(coord).map((a) => a.id);
 
 describe('actionsFor', () => {
-  it('a finished claim can be landed or rechecked, sent back only when its landing failed; an open or held one can be amended or called wrong', () => {
-    expect(ids({ kind: 'claim', id: 'c1', status: 'done' })).toEqual(['land', 'recheck']);
-    expect(ids({ kind: 'claim', id: 'c1', status: 'done', landing: { status: 'failed' } })).toEqual(['land', 'reopen', 'recheck']);
-    expect(ids({ kind: 'claim', id: 'c1', status: 'open' })).toEqual(['amend', 'finding']);
-    expect(ids({ kind: 'claim', id: 'c1', status: 'claimed' })).toEqual(['recheck', 'amend', 'finding']);
-    expect(ids({ kind: 'claim', id: 'c1', status: 'landed' })).toEqual(['recheck']);
-    expect(ids({ kind: 'claim', id: 'c1', status: 'stale' })).toEqual(['amend', 'finding']);
-    const finding = actionsFor({ kind: 'claim', id: 'c1', status: 'open' }).find((a) => a.id === 'finding');
+  it('a finished proposition can be landed or rechecked, sent back only when its landing failed; an open or held one can be amended or called wrong', () => {
+    expect(ids({ kind: 'proposition', id: 'c1', status: 'done' })).toEqual(['land', 'recheck']);
+    expect(ids({ kind: 'proposition', id: 'c1', status: 'done', landing: { status: 'failed' } })).toEqual(['land', 'reopen', 'recheck']);
+    expect(ids({ kind: 'proposition', id: 'c1', status: 'open' })).toEqual(['amend', 'finding']);
+    expect(ids({ kind: 'proposition', id: 'c1', status: 'claimed' })).toEqual(['recheck', 'amend', 'finding']);
+    expect(ids({ kind: 'proposition', id: 'c1', status: 'landed' })).toEqual(['recheck']);
+    expect(ids({ kind: 'proposition', id: 'c1', status: 'stale' })).toEqual(['amend', 'finding']);
+    const finding = actionsFor({ kind: 'proposition', id: 'c1', status: 'open' }).find((a) => a.id === 'finding');
     expect(finding).toMatchObject({ path: '/findings/owner', ask: 'finding', body: { effect: 'contradicts', where: ['c1'] } });
-    expect(actionsFor({ kind: 'claim', id: 'c1', status: 'open' }).find((a) => a.id === 'amend')).toMatchObject({ path: '/claims/c1/amend', ask: 'statement' });
-    const land = actionsFor({ kind: 'claim', id: 'c1', status: 'done' })[0];
-    expect(land).toMatchObject({ method: 'POST', path: '/claims/c1/land' });
+    expect(actionsFor({ kind: 'proposition', id: 'c1', status: 'open' }).find((a) => a.id === 'amend')).toMatchObject({ path: '/propositions/c1/amend', ask: 'statement' });
+    const land = actionsFor({ kind: 'proposition', id: 'c1', status: 'done' })[0];
+    expect(land).toMatchObject({ method: 'POST', path: '/propositions/c1/land' });
   });
 
   it('an unverified finding can be confirmed or refuted; a settled one offers nothing', () => {
@@ -38,7 +38,7 @@ describe('actionsFor', () => {
     expect(ids({ name: 'main', head: 'x' })).toEqual([]);
     expect(ids({ kind: 'assumption', id: 'a1', status: 'holding' })).toEqual([]);
     expect(ids(null)).toEqual([]);
-    expect(ids({ kind: 'claim', status: 'done' })).toEqual([]); // no id, no path
+    expect(ids({ kind: 'proposition', status: 'done' })).toEqual([]); // no id, no path
   });
 });
 
@@ -46,7 +46,7 @@ describe('errorWords', () => {
   it('reads the engine\'s refusals in plain words', () => {
     expect(errorWords(403, { error: 'forbidden', message: 'no access to this graph' })).toBe('You may not do that on this graph (no access to this graph)');
     expect(errorWords(404, null)).toMatch(/does not know/);
-    expect(errorWords(409, { message: 'claim is not done' })).toBe('The engine refused: claim is not done');
+    expect(errorWords(409, { message: 'proposition is not done' })).toBe('The engine refused: proposition is not done');
     expect(errorWords(503, {})).toMatch(/could not do it right now/);
     expect(errorWords(400, { message: 'bad body' })).toBe('bad body');
   });

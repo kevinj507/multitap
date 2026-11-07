@@ -2900,7 +2900,7 @@ function addGraphEdge(edge) {
 // rebuild, since there is nothing to diff against or the arrangement should be
 // recomputed from scratch.
 // One data model (Multitap er289bkv2zkcs5w6 #11334, R1; Kevin 2026-11-06): the
-// coordination engine's nodes — claims, lines, its findings and decisions, the
+// coordination engine's nodes — propositions, lines, its findings and decisions, the
 // ones carrying a `meta.coord` document — are hidden from the canvas by
 // default. A knowledge graph, a research graph or a project plan never has
 // them and must look exactly as before; a graph that uses the engine shows
@@ -2973,7 +2973,7 @@ async function fetchGraph({ diff = false } = {}) {
       color: (node.meta && node.meta.color) || DEFAULT_NODE_COLOR,
       meta: node.meta || {},
       // One data model: a node the coordination engine keeps (meta.coord) wears
-      // a dashed border on the canvas, so a claim reads as a claim at a glance.
+      // a dashed border on the canvas, so a proposition reads as a proposition at a glance.
       coord: node.meta && node.meta.coord ? 1 : 0,
       version: typeof node.version === 'number' ? node.version : 0,
     };
@@ -4321,17 +4321,17 @@ async function runCoordAction(action, btn) {
     // The two owner moves need words. The record's canvas runs in a normal
     // browser, where prompt() works; where it does not, the move is not made.
     let text = null;
-    try { text = typeof window.prompt === 'function' ? window.prompt(action.ask === 'finding' ? 'What is wrong? (recorded as a finding on your authority)' : 'The claim should say:') : null; } catch { text = null; }
+    try { text = typeof window.prompt === 'function' ? window.prompt(action.ask === 'finding' ? 'What is wrong? (recorded as a finding on your authority)' : 'The proposition should say:') : null; } catch { text = null; }
     if (text === null || text.trim() === '') return;
     body.statement = text.trim();
     if (action.ask === 'finding') {
-      // The finding contradicts an assumption the claim rests on. From the
-      // graph in hand: the engine's `required for` edges into this claim from
+      // The finding contradicts an assumption the proposition rests on. From the
+      // graph in hand: the engine's `required for` edges into this proposition from
       // assumption nodes. One: use it. Several: ask which. None: cannot file.
-      const claimNode = cy && editingTaskId ? cy.getElementById(String(editingTaskId)) : null;
+      const propositionNode = cy && editingTaskId ? cy.getElementById(String(editingTaskId)) : null;
       const rests = [];
-      if (claimNode && !claimNode.empty()) {
-        claimNode.incomers('edge').forEach((e) => {
+      if (propositionNode && !propositionNode.empty()) {
+        propositionNode.incomers('edge').forEach((e) => {
           const src = e.source();
           const m = src.data('meta') || {};
           // The engine's "rests on" edge is `required for` (a dependency). An
@@ -4342,7 +4342,7 @@ async function runCoordAction(action, btn) {
           if (restsOn && m.coord && m.type === 'assumption' && m.coord.id) rests.push({ id: m.coord.id, title: m.title || m.coord.id });
         });
       }
-      if (rests.length === 0) { showHint('This claim rests on no assumption to contradict; amend it or answer a decision instead'); return; }
+      if (rests.length === 0) { showHint('This proposition rests on no assumption to contradict; amend it or answer a decision instead'); return; }
       let pick = rests[0].id;
       if (rests.length > 1) {
         const menu = rests.map((r, i) => `${i + 1}. ${r.title} (${r.id})`).join('\n');
