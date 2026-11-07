@@ -4314,6 +4314,96 @@ function renderCoordActions(coord) {
   }
 }
 
+// --- Edges touching the coordination engine's nodes (choice (f) on #11334,
+// amended by Kevin on 2026-11-06; Multitap #11339). The decision is
+// public/coord-edges.js (window.CoordEdges, tested); this is the glue: read
+// the two nodes and the edge from the canvas, ask the person in the app's
+// own modal, and file the amendment when that is what the edge means.
+function coordKindOf(node) {
+  if (!node || node.empty()) return null;
+  const m = node.data('meta') || {};
+  return m.coord ? (m.coord.kind || m.type || 'node') : null;
+}
+function coordIdOf(node) {
+  const m = node && !node.empty() ? (node.data('meta') || {}) : {};
+  return m.coord && m.coord.id ? String(m.coord.id) : null;
+}
+function propWords(node) {
+  const m = node.data('meta') || {};
+  const t = m.title ? String(m.title) : '';
+  const title = t ? ` (“${t.slice(0, 48)}${t.length > 48 ? '…' : ''}”)` : '';
+  return `prop ${coordIdOf(node)}${title}`;
+}
+function isEngineEdge(edge) {
+  const m = edge && !edge.removed() ? (edge.data('meta') || {}) : {};
+  return !!m.coord;
+}
+// What a proposition rests on now, from the engine's own edges on the canvas.
+function restsOnOf(propNode) {
+  const ids = [];
+  propNode.incomers('edge').forEach((e) => {
+    if (!isEngineEdge(e)) return;
+    const p = e.data('purpose');
+    if (p !== 'required for' && !(p == null && e.data('edgeType') === 'dependency')) return;
+    const src = e.source();
+    const a = coordIdOf(src);
+    if (a && coordKindOf(src) === 'assumption' && !ids.includes(a)) ids.push(a);
+  });
+  return ids;
+}
+async function amendRestsOn(propNode, restsOn) {
+  const id = coordIdOf(propNode);
+  let res;
+  try {
+    res = await fetch(`${apiBase()}/propositions/${encodeURIComponent(id)}/amend`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ restsOn }),
+    });
+  } catch {
+    showHint('Could not reach the engine');
+    return false;
+  }
+  let payload = null;
+  try { payload = await res.json(); } catch { /* no body */ }
+  if (!res.ok) {
+    showHint(window.CoordActions ? window.CoordActions.errorWords(res.status, payload) : 'The engine refused the amendment');
+    return false;
+  }
+  showHint(`Amended what ${propWords(propNode)} rests on`);
+  return true;
+}
+// The gate every edge write passes. Returns 'normal' (go on as for any edge),
+// 'done' (the engine made the move; nothing more to write) or 'stop' (the
+// person said no, the edge is the engine's, or nothing needed filing). `op`
+// is 'create', 'change' or 'delete'; `purpose` is the edge's purpose after
+// the write ('required for' / 'related to').
+async function coordEdgeGate({ op, sourceNode, targetNode, purpose, edge = null }) {
+  if (!window.CoordEdges) return 'normal';
+  const targetIsProp = coordKindOf(targetNode) === 'proposition';
+  const d = window.CoordEdges.decide({
+    op,
+    sourceKind: coordKindOf(sourceNode),
+    targetKind: coordKindOf(targetNode),
+    purpose: purpose || (edge && edge.data('purpose')) || '',
+    engineEdge: isEngineEdge(edge),
+    restsOn: targetIsProp ? restsOnOf(targetNode) : [],
+    assumptionId: coordIdOf(sourceNode),
+    propWords: targetIsProp ? propWords(targetNode) : 'the prop',
+  });
+  if (d.case === 'plain') return 'normal';
+  if (d.case === 'rests') {
+    if (d.already) { showHint(`${propWords(targetNode)} already rests on ${coordIdOf(sourceNode)}`); return 'stop'; }
+    if (!(await showConfirm({ title: d.title, body: d.body, okText: d.okText }))) return 'stop';
+    return (await amendRestsOn(targetNode, d.restsOn)) ? 'done' : 'stop';
+  }
+  if (d.case === 'record') {
+    await showConfirm({ title: d.title, body: d.body, okText: 'OK', cancelText: 'Close' });
+    return 'stop';
+  }
+  return (await showConfirm({ title: d.title, body: d.body, okText: d.okText })) ? 'normal' : 'stop';
+}
+
 async function runCoordAction(action, btn) {
   const taskId = editingTaskId;
   const body = { ...(action.body || {}) };
@@ -5675,6 +5765,13 @@ async function commitEdgeCreation(targetNode) {
       const sourceTaskId = source.data('taskId');
       const fromId = direction === 'backward' ? targetTaskId : sourceTaskId;
       const toId = direction === 'backward' ? sourceTaskId : targetTaskId;
+      // An edge touching a coordination node passes the engine's gate first
+      // (#11339): it may become an amendment, be refused, or be the person's.
+      const fromNode = direction === 'backward' ? targetNode : source;
+      const toNode = direction === 'backward' ? source : targetNode;
+      const gate = await coordEdgeGate({ op: 'create', sourceNode: fromNode, targetNode: toNode, purpose: isRelated ? 'related to' : 'required for' });
+      if (gate === 'done') { created += 1; continue; }
+      if (gate === 'stop') continue;
       const res = await createEdge(fromId, toId, isRelated ? 'related' : 'dependency');
       if (res.ok) {
         created += 1;
@@ -5822,6 +5919,21 @@ async function commitEdgeTypeEdit() {
     return;
   }
 
+  if (edge && !edge.removed()) {
+    // A change to an edge touching a coordination node passes the engine's
+    // gate first (#11339): the engine's own edges are not changed here, and a
+    // person's edge is changed only once they say so.
+    const fromNode = cy.getElementById(String(newSourceId));
+    const toNode = cy.getElementById(String(newTargetId));
+    const gate = await coordEdgeGate({ op: 'change', sourceNode: fromNode, targetNode: toNode, purpose: typeToPurpose(newType), edge });
+    if (gate !== 'normal') {
+      edge.removeClass('edge-type-editing');
+      edge.removeClass('dir-backward');
+      edge.data('edgeType', originalType);
+      updateToolbar();
+      return;
+    }
+  }
   if (edge && !edge.removed()) edge.removeClass('edge-type-editing');
   const rawId = String(edgeId).replace(/^e/, '');
   try {
@@ -6857,13 +6969,31 @@ function confirmDelete(message, opts = {}) {
 async function deleteSelected() {
   if (!document.getElementById('delete-modal').classList.contains('hidden')) return;
   const nodes = cy.nodes('.selected').filter((n) => n.id() !== '__pending__' && n.data('taskId'));
-  const edges = cy.edges('.selected');
-  if (nodes.length === 0 && edges.length === 0) return;
+  const selectedEdges = cy.edges('.selected');
+  if (nodes.length === 0 && selectedEdges.length === 0) return;
+
+  // An edge touching a coordination node passes the engine's gate first
+  // (#11339): the engine's rests-on edge goes as an amendment (its own
+  // confirmation), its other edges stay, a person's own edge goes as any edge.
+  const edges = [];
+  let engineMoves = 0;
+  for (const e of selectedEdges) {
+    const gate = await coordEdgeGate({ op: 'delete', sourceNode: e.source(), targetNode: e.target(), purpose: e.data('purpose') || typeToPurpose(e.data('edgeType')), edge: e });
+    if (gate === 'normal') edges.push(e);
+    else if (gate === 'done') engineMoves += 1;
+  }
+  if (nodes.length === 0 && edges.length === 0) {
+    if (engineMoves > 0) { clearSelection(); await fetchGraph(); }
+    return;
+  }
 
   const parts = [];
   if (nodes.length) parts.push(`${nodes.length} ${nodes.length === 1 ? 'task' : 'tasks'}`);
   if (edges.length) parts.push(`${edges.length} ${edges.length === 1 ? 'edge' : 'edges'}`);
-  if (!(await confirmDelete(`Delete ${parts.join(' and ')}?`))) return;
+  if (!(await confirmDelete(`Delete ${parts.join(' and ')}?`))) {
+    if (engineMoves > 0) { clearSelection(); await fetchGraph(); }
+    return;
+  }
 
   for (const n of nodes) {
     await deleteTask(n.data('taskId'));
