@@ -22,10 +22,16 @@ detail lives in the linked files.
   - `style.css` — **all** CSS for **both** pages (tokens + components).
     One file, ~3000 lines.
   - The small pure ES modules (`reader-*.js`, `route-parse.js`,
-    `search-*.js`) are the shared, unit-tested logic: the browser hangs
-    them on `window.*` via a `<script type="module">` shim in
-    `index.html`, and vitest imports them directly. Put testable logic
-    here rather than in `app.js`.
+    `search-*.js`, `coord-*.js`, `inbox.js`) are the shared, unit-tested
+    logic: the browser hangs them on `window.*` via a `<script
+    type="module">` shim in `index.html`, and vitest imports them
+    directly. Put testable logic here rather than in `app.js`.
+  - `inbox.js` — the inbox and the triggers (Multitap #12450): the server
+    holds "when to look again" on a graph or a node and fires it; a job it
+    proposes waits in the inbox (sidebar button + pill, `#inbox-modal`)
+    for an editor's okay, and the node panel's "Look again" section adds
+    per-node triggers. Served by the Go server's `/api/graphs/:gid/
+    triggers|jobs|notices|inbox` routes; the Node server here has none.
 - `src/` — Node/Express server (auth, graphs, SSE, REST endpoints).
 - `db/` — schema + migrations. Postgres.
 - `design/DESIGN.md` — prose design spec (see below).

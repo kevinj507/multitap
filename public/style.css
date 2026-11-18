@@ -4710,3 +4710,50 @@ body.panel-coord #task-form .body-section { opacity: 0.85; }
 .coord-action { font: inherit; font-size: var(--text-body-sm, 13px); padding: 4px 10px; border: 1px solid currentColor; border-radius: var(--radius-md, 4px); background: transparent; color: inherit; cursor: pointer; }
 .coord-action:hover { background: color-mix(in srgb, currentColor 10%, transparent); }
 .coord-action[disabled] { opacity: 0.5; cursor: progress; }
+
+/* ---- The inbox and the triggers (Multitap #12450) ---- */
+.sb-count {
+  margin-left: auto;
+  min-width: 18px;
+  padding: 0 6px;
+  border-radius: 9px;
+  background: var(--color-ember-orange, #ff4700);
+  color: #fff;
+  font-size: var(--text-meta, 11px);
+  font-weight: 600;
+  line-height: 18px;
+  text-align: center;
+}
+#sidebar.collapsed .sb-count { position: absolute; right: 4px; top: 2px; margin: 0; }
+#sidebar-inbox-btn { position: relative; }
+.inbox-content { max-width: 720px; width: min(720px, 94vw); max-height: 88vh; overflow: auto; }
+.inbox-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3, 12px); }
+.inbox-head h3 { margin: 0; }
+.inbox-note { opacity: 0.8; line-height: 1.4; margin: var(--space-2, 8px) 0 var(--space-3, 12px); font-size: var(--text-body-sm, 13px); }
+.inbox-section { margin: 0 0 var(--space-4, 16px); }
+.inbox-section h4 { margin: 0 0 var(--space-2, 8px); font-size: var(--text-body-sm, 13px); letter-spacing: 0.02em; text-transform: uppercase; opacity: 0.75; }
+.inbox-hint, .inbox-empty { margin: 0 0 var(--space-2, 8px); opacity: 0.7; font-size: var(--text-body-sm, 13px); line-height: 1.4; }
+.inbox-row { padding: var(--space-2, 8px) var(--space-3, 12px); margin: 0 0 var(--space-2, 8px); border: 1px solid var(--border); border-radius: var(--radius-md, 8px); font-size: var(--text-body-sm, 13px); }
+.inbox-row-head { display: flex; justify-content: space-between; gap: var(--space-3, 12px); align-items: baseline; flex-wrap: wrap; }
+.inbox-title { font-weight: 600; }
+.inbox-meta { opacity: 0.65; font-size: var(--text-meta, 11px); overflow-wrap: anywhere; }
+.inbox-state { margin: 4px 0; opacity: 0.85; }
+.inbox-body { margin: 4px 0; line-height: 1.4; overflow-wrap: anywhere; }
+.inbox-error { color: var(--color-ember-orange, #ff4700); }
+.inbox-details { margin: 4px 0; }
+.inbox-details summary { cursor: pointer; opacity: 0.75; }
+.inbox-details pre { white-space: pre-wrap; max-height: 240px; overflow: auto; font-size: var(--text-meta, 11px); margin: 4px 0 0; }
+.inbox-row-actions { display: flex; gap: var(--space-2, 8px); flex-wrap: wrap; margin-top: var(--space-2, 8px); }
+.inbox-row-actions:empty { display: none; }
+.inbox-approve { border-color: var(--color-ember-orange, #ff4700); color: var(--color-ember-orange, #ff4700); }
+.inbox-danger { opacity: 0.7; }
+.inbox-paused { opacity: 0.6; }
+.inbox-job-proposed { border-left: 3px solid var(--color-ember-orange, #ff4700); }
+.inbox-form { display: flex; flex-wrap: wrap; gap: var(--space-2, 8px); align-items: flex-start; margin-top: var(--space-2, 8px); }
+.inbox-form:empty { display: none; }
+.inbox-input { font: inherit; font-size: var(--text-body-sm, 13px); padding: 4px 8px; border: 1px solid var(--border); border-radius: var(--radius-md, 4px); background: transparent; color: inherit; }
+.inbox-days { width: 5.5em; }
+.inbox-prompt { flex: 1 1 100%; min-width: 0; resize: vertical; }
+.triggers-section .triggers-list .inbox-row { margin-bottom: var(--space-2, 8px); }
+/* `.hidden` is inert here: each inbox element supplies its own rule. */
+#sidebar-inbox-btn.hidden, #sidebar-inbox-count.hidden, .sb-count.hidden, #triggers-section.hidden, .inbox-input.hidden, .inbox-form .hidden { display: none; }

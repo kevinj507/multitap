@@ -1183,6 +1183,101 @@ function writeHeaders() {
   return h;
 }
 
+// --- The inbox and the triggers (Multitap #12450) ---
+//
+// The server holds "when to look again" (triggers on the graph or a node) and
+// fires it: a notice, or a job that waits in the inbox for an editor's okay
+// before a model runs. public/inbox.js does the words and the rendering; this
+// is the glue — the sidebar pill, the modal, the panel's section, the stream.
+
+function inboxCtx() {
+  return {
+    apiBase,
+    writeHeaders,
+    authedFetch,
+    showHint: (text) => showHint(text, 'page'),
+    canEdit: () => !isReadOnly(),
+    nodeLink: (id) => `/g/${encodeURIComponent(activeGraphId)}?node=${encodeURIComponent(id)}`,
+    onChanged: refreshInboxBadge,
+  };
+}
+
+function paintInboxBadge(counts) {
+  const btn = document.getElementById('sidebar-inbox-btn');
+  const pill = document.getElementById('sidebar-inbox-count');
+  if (!btn || !pill) return;
+  if (activeGraphId == null) { btn.classList.add('hidden'); return; }
+  btn.classList.remove('hidden');
+  const n = window.Inbox ? window.Inbox.badgeCount(counts) : 0;
+  pill.textContent = n > 99 ? '99+' : String(n);
+  pill.classList.toggle('hidden', n === 0);
+  const due = counts && counts.due_triggers ? `, ${counts.due_triggers} due` : '';
+  btn.title = n === 0 ? `Inbox — nothing waiting${due}` : `Inbox — ${counts.proposed_jobs || 0} waiting for your okay, ${counts.unseen_notices || 0} unseen${due}`;
+}
+
+async function refreshInboxBadge() {
+  if (activeGraphId == null || !window.Inbox) { paintInboxBadge(null); return; }
+  try {
+    paintInboxBadge(await window.Inbox.fetchInbox(inboxCtx()));
+  } catch {
+    paintInboxBadge(null);
+  }
+}
+
+function inboxModalOpen() {
+  const m = document.getElementById('inbox-modal');
+  return !!m && !m.classList.contains('hidden');
+}
+
+async function renderInboxModal() {
+  const body = document.getElementById('inbox-body');
+  const title = document.getElementById('inbox-title');
+  if (!body || !window.Inbox || activeGraphId == null) return;
+  if (title) title.textContent = `Inbox — ${(currentGraph && currentGraph.name) || 'this graph'}`;
+  await window.Inbox.renderInbox(inboxCtx(), body);
+}
+
+function openInboxModal() {
+  const m = document.getElementById('inbox-modal');
+  if (!m || activeGraphId == null) return;
+  m.classList.remove('hidden');
+  renderInboxModal();
+}
+
+function closeInboxModal() {
+  document.getElementById('inbox-modal')?.classList.add('hidden');
+}
+
+function wireInbox() {
+  document.getElementById('sidebar-inbox-btn')?.addEventListener('click', openInboxModal);
+  document.getElementById('inbox-close')?.addEventListener('click', closeInboxModal);
+  document.getElementById('inbox-modal')?.addEventListener('click', (e) => {
+    if (e.target.id === 'inbox-modal') closeInboxModal();
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && inboxModalOpen()) closeInboxModal();
+  });
+  // The module may land after this runs; paint once it has.
+  window.__inboxModuleReady = () => refreshInboxBadge();
+  if (window.Inbox) refreshInboxBadge();
+  // A #inbox link opens it (a notice in a message can point here).
+  if (location.hash === '#inbox') {
+    const tryOpen = (n) => {
+      if (activeGraphId != null && window.Inbox) openInboxModal();
+      else if (n > 0) setTimeout(() => tryOpen(n - 1), 300);
+    };
+    tryOpen(20);
+  }
+}
+
+function renderTriggersSection(task) {
+  const host = document.getElementById('triggers-section');
+  if (!host) return;
+  if (!task || task.id == null || !window.Inbox || activeGraphId == null) { host.classList.add('hidden'); return; }
+  const type = task.meta && typeof task.meta.type === 'string' ? task.meta.type : null;
+  window.Inbox.renderNodeTriggers(inboxCtx(), host, { id: task.id, type }).catch(() => host.classList.add('hidden'));
+}
+
 // --- Active graph (multi-graph support) ---
 let activeGraphId = null;
 // The full row for the active graph (name, description, is_public, settings,
@@ -4502,6 +4597,7 @@ function loadIntoEditor(content, task = null) {
   // included); the client's parseFrontmatter above reads flat keys only.
   panelLoadedCoord = task && task.meta && task.meta.coord && typeof task.meta.coord === 'object' ? task.meta.coord : null;
   renderCoordSection(panelLoadedCoord);
+  renderTriggersSection(task);
   // showPanel applied editability before this row arrived; apply it again now
   // that we know whether the node is the engine's.
   applyPanelEditability();
@@ -7993,6 +8089,7 @@ async function switchActiveGraph(id, { pushState = false } = {}) {
   accessDenied = false;
   activeGraphId = id;
   if (typeof window.__paintCoordToggle === 'function') window.__paintCoordToggle();
+  refreshInboxBadge();
   invalidateSearchDocs();
   if (isSearchBarOpen()) closeSearchBar({ restore: false });
   try { localStorage.setItem(ACTIVE_GRAPH_STORAGE_KEY, String(id)); } catch {}
@@ -9199,6 +9296,13 @@ function openGraphEventStream(id) {
     }
     if (payload && payload.kind === 'selection') {
       handleSelectionEvent(payload);
+      return;
+    }
+    // The inbox changed (a trigger fired, a job moved): repaint the badge and
+    // the open inbox; never the canvas (Multitap #12450).
+    if (payload && payload.kind === 'inbox') {
+      paintInboxBadge(payload);
+      if (inboxModalOpen()) renderInboxModal();
       return;
     }
     // A report write (kind:'report') is graph-adjacent, NOT a graph edit: the
@@ -11064,6 +11168,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (isSidebarCollapsed()) setSidebarCollapsed(false);
     openSettings();
   });
+  wireInbox();
   applySidebarCollapsedFromStorage();
 
   // Boot sidebar — fetches graphs, resolves active graph, loads its data.
