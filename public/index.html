@@ -85,6 +85,14 @@
            whether auth is enabled; empty when AUTH_PROVIDER=none so the sidebar
            looks identical to Phase A. -->
       <div id="sidebar-auth"></div>
+      <!-- The inbox (Multitap #12450): what the server's triggers fired for the
+           active graph — jobs waiting for an okay, notices. The pill counts
+           what needs a person. Hidden until a graph is active. -->
+      <button id="sidebar-inbox-btn" class="sb-bottom-btn hidden" title="Inbox — triggers, jobs waiting for your okay, notices" aria-label="Inbox">
+        <i class="ph ph-tray" aria-hidden="true"></i>
+        <span class="sb-bottom-label">Inbox</span>
+        <span id="sidebar-inbox-count" class="sb-count hidden" aria-live="polite"></span>
+      </button>
       <button id="app-settings-btn" class="sb-bottom-btn" title="App-level Defaults" aria-label="Settings">
         <i class="ph ph-gear" aria-hidden="true"></i>
         <span class="sb-bottom-label">Settings</span>
@@ -249,6 +257,18 @@
           <summary>The whole document</summary>
           <pre id="coord-document"></pre>
         </details>
+      </section>
+      <!-- "Look again" (Multitap #12450): the triggers on this node — re-verify
+           it every N days, a reminder on a date, a tripwire condition, or (for
+           a decision) a word when its grounds change. The server holds and
+           fires them; a job it proposes waits in the inbox for an okay. -->
+      <section id="triggers-section" class="coord-section triggers-section hidden" aria-live="polite">
+        <div class="coord-section-header">
+          <span class="coord-section-title">Look again</span>
+        </div>
+        <p class="coord-section-note">When the server should look at this node again, and what it should do then.</p>
+        <div class="triggers-list"></div>
+        <div class="triggers-form inbox-form"></div>
       </section>
       <div class="bg-image-row hidden" id="bg-image-row">
         <span class="bg-image-label">Background image</span>
@@ -657,6 +677,17 @@
 
   <!-- Agent tokens panel (Phase B5d). Opened from the user pill in the sidebar
        bottom when signed in. -->
+  <!-- The inbox (Multitap #12450). Body rendered by public/inbox.js. -->
+  <div id="inbox-modal" class="modal hidden">
+    <div class="modal-content modal-content-form inbox-content">
+      <div class="inbox-head">
+        <h3 id="inbox-title">Inbox</h3>
+        <button id="inbox-close" type="button" class="coord-action" aria-label="Close">Close</button>
+      </div>
+      <div id="inbox-body"></div>
+    </div>
+  </div>
+
   <div id="agent-tokens-modal" class="modal hidden">
     <div class="modal-content modal-content-form">
       <h3>Agent tokens</h3>
@@ -735,6 +766,9 @@
     window.CoordActions = CoordActions;
     import * as CoordEdges from '/coord-edges.js';
     window.CoordEdges = CoordEdges;
+    import * as Inbox from '/inbox.js';
+    window.Inbox = Inbox;
+    if (typeof window.__inboxModuleReady === 'function') window.__inboxModuleReady();
   </script>
   <!-- Reader citation parser (E16 footnotes): app.js reads window.ReaderCite to
        turn [[cite:<id>]] markers into numbered footnotes. -->
@@ -757,5 +791,5 @@
     window.RouteParse = RouteParse;
   </script>
   <script src="/app.js"></script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9fb48c35da61281b',t:'MTc3ODcwNTU1NA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</body>
 </html>
